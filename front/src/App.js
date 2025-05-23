@@ -8,7 +8,8 @@ import {
   Area,
 } from "recharts";
 
-const API_URL = "http://localhost:3001";
+const API_URL = "http://localhost:8080/metrics";
+
 
 function App() {
   const [records, setRecords] = useState(false);
