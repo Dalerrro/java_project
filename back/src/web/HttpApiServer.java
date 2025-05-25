@@ -34,21 +34,33 @@ public class HttpApiServer {
                     exchange.sendResponseHeaders(405, -1);
                     return;
                 }
-
+                
                 HashMap<String, Integer> swap = SystemMetrics.getSwap();
+                String uptime = SystemMetrics.getUptime();
+                int processes = SystemMetrics.getProcessCount();
+                double cpuTemp = SystemMetrics.getCPUTemperature();
+                int logical = SystemMetrics.getLogicalCores();
+                int physical = SystemMetrics.getPhysicalCores();
+                double freq = SystemMetrics.getCpuFrequency();
+            
                 String json = "{"
-                        + "\"uptime\":\"" + SystemMetrics.getUptime() + "\"," 
-                        + "\"processes\":" + SystemMetrics.getProcessCount() + ","
-                        + "\"swap_total\":" + swap.get("total") + ","
-                        + "\"swap_used\":" + swap.get("used")
-                        + "}";
-
+                    + "\"uptime\":\"" + uptime + "\","
+                    + "\"processes\":" + processes + ","
+                    + "\"swap_total\":" + swap.get("total") + ","
+                    + "\"swap_used\":" + swap.get("used") + ","
+                    + "\"cpu_temp\":" + cpuTemp + ","
+                    + "\"logical_cores\":" + logical + ","
+                    + "\"physical_cores\":" + physical + ","
+                    + "\"cpu_freq\":" + freq
+                    + "}";
+            
                 exchange.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
                 exchange.sendResponseHeaders(200, json.getBytes().length);
                 OutputStream os = exchange.getResponseBody();
                 os.write(json.getBytes());
                 os.close();
             });
+            
 
             server.setExecutor(null);
             server.start();

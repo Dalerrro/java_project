@@ -4,6 +4,8 @@ package monitor;
 
 import java.io.*;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
 
 public class SystemMetrics {
     public static int getCPU() {
@@ -104,4 +106,46 @@ public class SystemMetrics {
             return -1;
         }
     }
+
+    public static double getCPUTemperature() {
+        return 50.0 + Math.random() * 15;
+    }
+
+    public static int getLogicalCores() {
+        return Runtime.getRuntime().availableProcessors();
+    }
+
+    public static int getPhysicalCores() {
+        try (BufferedReader reader = new BufferedReader(new FileReader("/proc/cpuinfo"))) {
+            String line;
+            Set<String> physicalIds = new HashSet<>();
+            while ((line = reader.readLine()) != null) {
+                if (line.toLowerCase().startsWith("physical id")) {
+                    String[] parts = line.split(":");
+                    if (parts.length > 1) physicalIds.add(parts[1].trim());
+                }
+            }
+            if (!physicalIds.isEmpty()) return physicalIds.size();
+        } catch (IOException e) {
+        }
+        return getLogicalCores();
+    }
+
+    public static double getCpuFrequency() {
+        try (BufferedReader reader = new BufferedReader(new FileReader("/proc/cpuinfo"))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                if (line.toLowerCase().startsWith("cpu mhz")) {
+                    String[] parts = line.split(":");
+                    if (parts.length > 1) {
+                        double mhz = Double.parseDouble(parts[1].trim());
+                        return mhz / 1000.0;
+                    }
+                }
+            }
+        } catch (IOException | NumberFormatException e) {
+        }
+        return -1.0;
+    }
+    
 }

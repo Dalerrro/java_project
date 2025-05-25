@@ -11,3 +11,17 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+.recharts-wrapper {
+  background-color: #1e1e1e !important;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.recharts-cartesian-axis-tick-text {
+  fill: #ccc !important;
+}
+
+.recharts-cartesian-grid-horizontal line {
+  stroke: rgba(255, 255, 255, 0.1) !important;
+}
