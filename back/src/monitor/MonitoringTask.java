@@ -3,6 +3,7 @@
 package monitor;
 
 import db.DatabaseManager;
+import monitor.TelegramSender;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -22,6 +23,16 @@ public class MonitoringTask extends TimerTask {
         System.out.println("CPU: " + cpu + "%");
         System.out.println("Memory: " + memory.get("used") + "/" + memory.get("total"));
         System.out.println("DiskUsage: " + disk + "%");
+
+        if (cpu > 90) {
+            TelegramSender.send("⚠️ Высокая загрузка CPU: " + cpu + "%");
+        }
+        if (memory.get("used") > memory.get("total") * 0.9) {
+            TelegramSender.send("⚠️ Память почти заполнена: " + memory.get("used") + "/" + memory.get("total"));
+        }
+        if (disk > 90) {
+            TelegramSender.send("⚠️ Мало места на диске: " + disk + "% занято");
+        }
 
         final String insertSQL = "INSERT INTO DATA (CPU, MEMORY_TOTAL, MEMORY_USED, DISK_USAGE) VALUES (?, ?, ?, ?)";
 
