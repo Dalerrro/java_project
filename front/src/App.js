@@ -1,20 +1,22 @@
+// src/App.jsx
+
 import React from 'react';
 import LiveStats from './components/LiveStats';
-import MetricsChart from './components/MetricsChart'; // если есть компонент графиков
-import { Container, Typography, Box } from '@mui/material';
+import MetricsChart from './components/MetricsChart'
+import { Container } from '@mui/material';
 
 function App() {
   return (
-    <Container sx={{ mt: 4, mb: 4 }}>
-      <Typography variant="h4" gutterBottom>
-        Мониторинг системных ресурсов
-      </Typography>
-      <Box sx={{ mb: 4 }}>
-        <LiveStats />
-      </Box>
-      <Box>
-        <MetricsChart />
-      </Box>
+    // 1) maxWidth={false} — контейнер займёт всю ширину экрана
+    // 2) disableGutters     — убирает горизонтальные отступы слева/справа
+    <Container maxWidth={false} disableGutters sx={{ mt: 4, mb: 4 }}>
+      <LiveStats />
+
+      {/*
+        Если бы вы хотели оставить какой-то небольшой боковой отступ,
+        можно вместо disableGutters написать, например, px={2} или px={3}.
+      */}
+      <MetricsChart />
     </Container>
   );
 }

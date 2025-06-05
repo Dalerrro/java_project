@@ -1,19 +1,31 @@
+// src/index.js
+
 import React from 'react';
-import ReactDOM from 'react-dom/client';
+import ReactDOM from 'react-dom';
 import App from './App';
-import { ThemeProvider, createTheme } from '@mui/material/styles';
-import CssBaseline from '@mui/material/CssBaseline';
+import { createTheme, ThemeProvider, CssBaseline } from '@mui/material';
 
 const darkTheme = createTheme({
   palette: {
     mode: 'dark',
+    primary: { main: '#1976d2' },
+    secondary: { main: '#4caf50' },
+    background: {
+      default: '#121212',
+      paper: '#1e1e1e',
+    },
+  },
+  typography: {
+    fontFamily: 'Roboto, Arial, sans-serif',
   },
 });
 
-const root = ReactDOM.createRoot(document.getElementById('root'));
-root.render(
-  <ThemeProvider theme={darkTheme}>
-    <CssBaseline />
-    <App />
-  </ThemeProvider>
+ReactDOM.render(
+  <React.StrictMode>
+    <ThemeProvider theme={darkTheme}>
+      <CssBaseline />
+      <App />
+    </ThemeProvider>
+  </React.StrictMode>,
+  document.getElementById('root')
 );
