@@ -40,7 +40,6 @@ const LiveStats = () => {
     };
 
     fetchStatus();
-    // Обновляем каждые 5 секунд для быстрого отклика
     const interval = setInterval(fetchStatus, 1000);
     return () => clearInterval(interval);
   }, []);
@@ -86,7 +85,6 @@ const LiveStats = () => {
 
   if (!status) return null;
 
-  // Функция для создания анимированных карточек
   const createStatCard = (title, value, icon, color, gradient, unit = '', progress = null) => (
     <Card
       sx={{
@@ -215,7 +213,6 @@ const LiveStats = () => {
     </Card>
   );
 
-  // Определяем цвета и градиенты для каждой метрики
   const colorScheme = {
     uptime: { color: '#00bcd4', gradient: 'linear-gradient(135deg, #00bcd4, #0097a7)' },
     processes: { color: '#9c27b0', gradient: 'linear-gradient(135deg, #9c27b0, #7b1fa2)' },
