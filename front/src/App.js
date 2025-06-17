@@ -1,6 +1,6 @@
 // src/App.js
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { CssBaseline, ThemeProvider, createTheme } from '@mui/material';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
@@ -8,6 +8,8 @@ import Overview from './components/Overview';
 import MetricsPage from './components/MetricsPage';
 import AlertsPage from './components/AlertsPage';
 import SettingsPage from './components/SettingsPage';
+import api from './services/api';
+import useSystemMonitor from './hooks/useSystemMonitor';
 
 const lightTheme = createTheme({
   palette: {
@@ -41,6 +43,28 @@ const lightTheme = createTheme({
 
 function App() {
   const [activeTab, setActiveTab] = useState('overview');
+  const [serverHealth, setServerHealth] = useState(null);
+
+  // Используем хук для автоматического мониторинга и отправки алертов
+  useSystemMonitor();
+
+  useEffect(() => {
+    // Проверяем здоровье сервера при загрузке
+    const checkHealth = async () => {
+      try {
+        const health = await api.getHealth();
+        setServerHealth(health.status);
+      } catch (err) {
+        console.error('Server health check failed:', err);
+        setServerHealth('DOWN');
+      }
+    };
+
+    checkHealth();
+    // Проверяем каждую минуту
+    const interval = setInterval(checkHealth, 60000);
+    return () => clearInterval(interval);
+  }, []);
 
   const renderContent = () => {
     switch (activeTab) {
@@ -66,7 +90,7 @@ function App() {
         display: 'flex',
         flexDirection: 'column'
       }}>
-        <Header />
+        <Header serverHealth={serverHealth} />
         <div style={{ display: 'flex', flex: 1 }}>
           <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
           <main style={{ 

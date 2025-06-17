@@ -1,3 +1,4 @@
+// src/components/Sidebar.jsx
 
 import React, { useEffect, useState } from 'react';
 import {
@@ -9,7 +10,8 @@ import {
   Paper,
   Typography,
   Chip,
-  Divider
+  Divider,
+  LinearProgress
 } from '@mui/material';
 import {
   BarChart,
@@ -18,25 +20,29 @@ import {
   Settings,
   CheckCircle,
   Warning,
-  Error,
-  Computer
+  Error as ErrorIcon,
+  Computer,
+  Thermostat,
+  Memory
 } from '@mui/icons-material';
+import api from '../services/api';
 
 const Sidebar = ({ activeTab, setActiveTab }) => {
   const [systemStatus, setSystemStatus] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     // Получаем статус системы для отображения в сайдбаре
-    const fetchSystemStatus = () => {
-      fetch('http://localhost:8080/status')
-        .then(res => res.json())
-        .then(data => {
-          setSystemStatus(data);
-        })
-        .catch(err => {
-          console.error('Error fetching status:', err);
-          setSystemStatus({ status: 'error' });
-        });
+    const fetchSystemStatus = async () => {
+      try {
+        const data = await api.getSystemCurrent();
+        setSystemStatus(data);
+        setLoading(false);
+      } catch (err) {
+        console.error('Error fetching status:', err);
+        setSystemStatus({ status: 'error' });
+        setLoading(false);
+      }
     };
 
     fetchSystemStatus();
@@ -72,29 +78,56 @@ const Sidebar = ({ activeTab, setActiveTab }) => {
   ];
 
   const getSystemStatusInfo = () => {
-    if (!systemStatus) {
+    if (!systemStatus || loading) {
       return {
         status: 'loading',
         color: '#6b7280',
         icon: Computer,
         text: 'Loading...',
-        uptime: 'N/A'
+        uptime: 'N/A',
+        processes: 'N/A',
+        cpuUsage: 0,
+        memoryUsage: 0,
+        temperature: 0
       };
     }
 
-    // Определяем общий статус на основе метрик
-    const cpuHigh = systemStatus.cpu_usage > 80;
-    const memoryHigh = systemStatus.memory_used / systemStatus.memory_total > 0.85;
-    const diskHigh = systemStatus.disk_usage > 90;
-    const tempHigh = systemStatus.cpu_temp > 75;
+    if (systemStatus.status === 'error') {
+      return {
+        status: 'error',
+        color: '#ef4444',
+        icon: ErrorIcon,
+        text: 'Connection error',
+        uptime: 'N/A',
+        processes: 'N/A',
+        cpuUsage: 0,
+        memoryUsage: 0,
+        temperature: 0
+      };
+    }
 
-    if (cpuHigh || memoryHigh || diskHigh || tempHigh) {
+    const cpuUsage = systemStatus.currentMetrics?.cpuUsage || 0;
+    const memoryUsage = systemStatus.currentMetrics?.memoryUsagePercent || 0;
+    const temperature = systemStatus.sensorData?.cpuTemperature || 0;
+    const processes = systemStatus.staticInfo?.processes || 0;
+    const uptime = systemStatus.staticInfo?.uptime || 'N/A';
+
+    // Определяем общий статус на основе метрик
+    const cpuHigh = cpuUsage > 80;
+    const memoryHigh = memoryUsage > 85;
+    const tempHigh = temperature > 75;
+
+    if (cpuHigh || memoryHigh || tempHigh) {
       return {
         status: 'warning',
         color: '#f59e0b',
         icon: Warning,
         text: 'Attention needed',
-        uptime: systemStatus.uptime || 'N/A'
+        uptime,
+        processes,
+        cpuUsage,
+        memoryUsage,
+        temperature
       };
     }
 
@@ -103,7 +136,11 @@ const Sidebar = ({ activeTab, setActiveTab }) => {
       color: '#10b981',
       icon: CheckCircle,
       text: 'All systems operational',
-      uptime: systemStatus.uptime || 'N/A'
+      uptime,
+      processes,
+      cpuUsage,
+      memoryUsage,
+      temperature
     };
   };
 
@@ -176,10 +213,12 @@ const Sidebar = ({ activeTab, setActiveTab }) => {
           sx={{
             p: 2.5,
             backgroundColor: statusInfo.status === 'healthy' ? '#f0fdf4' : 
-                            statusInfo.status === 'warning' ? '#fffbeb' : '#f9fafb',
+                            statusInfo.status === 'warning' ? '#fffbeb' : 
+                            statusInfo.status === 'error' ? '#fef2f2' : '#f9fafb',
             border: `1px solid ${
               statusInfo.status === 'healthy' ? '#bbf7d0' :
-              statusInfo.status === 'warning' ? '#fed7aa' : '#e5e7eb'
+              statusInfo.status === 'warning' ? '#fed7aa' : 
+              statusInfo.status === 'error' ? '#fecaca' : '#e5e7eb'
             }`,
             borderRadius: 2
           }}
@@ -207,7 +246,8 @@ const Sidebar = ({ activeTab, setActiveTab }) => {
             variant="body2" 
             sx={{ 
               color: statusInfo.status === 'healthy' ? '#166534' :
-                     statusInfo.status === 'warning' ? '#92400e' : '#374151',
+                     statusInfo.status === 'warning' ? '#92400e' : 
+                     statusInfo.status === 'error' ? '#991b1b' : '#374151',
               fontSize: '0.8rem',
               mb: 1.5,
               fontWeight: 500
@@ -216,35 +256,130 @@ const Sidebar = ({ activeTab, setActiveTab }) => {
             {statusInfo.text}
           </Typography>
           
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Typography variant="caption" sx={{ color: '#6b7280', fontSize: '0.75rem' }}>
-                Uptime
-              </Typography>
-              <Chip
-                label={statusInfo.uptime}
-                size="small"
-                sx={{
-                  height: 20,
-                  fontSize: '0.7rem',
-                  backgroundColor: 'rgba(107, 114, 128, 0.1)',
-                  color: '#374151',
-                  border: 'none'
-                }}
-              />
-            </Box>
-            
-            {systemStatus && (
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Typography variant="caption" sx={{ color: '#6b7280', fontSize: '0.75rem' }}>
-                  Processes
-                </Typography>
-                <Typography variant="caption" sx={{ color: '#374151', fontSize: '0.75rem', fontWeight: 500 }}>
-                  {systemStatus.processes || 'N/A'}
-                </Typography>
+          {statusInfo.status !== 'error' && !loading && (
+            <>
+              {/* Quick Metrics */}
+              <Box sx={{ mb: 2 }}>
+                {/* CPU Usage */}
+                <Box sx={{ mb: 1.5 }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      <Computer sx={{ fontSize: '0.875rem', color: '#6b7280' }} />
+                      <Typography variant="caption" sx={{ color: '#6b7280', fontSize: '0.75rem' }}>
+                        CPU
+                      </Typography>
+                    </Box>
+                    <Typography variant="caption" sx={{ color: '#374151', fontSize: '0.75rem', fontWeight: 600 }}>
+                      {statusInfo.cpuUsage.toFixed(1)}%
+                    </Typography>
+                  </Box>
+                  <LinearProgress 
+                    variant="determinate" 
+                    value={statusInfo.cpuUsage} 
+                    sx={{
+                      height: 4,
+                      borderRadius: 2,
+                      backgroundColor: '#e5e7eb',
+                      '& .MuiLinearProgress-bar': {
+                        backgroundColor: statusInfo.cpuUsage > 80 ? '#ef4444' : 
+                                       statusInfo.cpuUsage > 60 ? '#f59e0b' : '#10b981',
+                        borderRadius: 2
+                      }
+                    }}
+                  />
+                </Box>
+
+                {/* Memory Usage */}
+                <Box sx={{ mb: 1.5 }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      <Memory sx={{ fontSize: '0.875rem', color: '#6b7280' }} />
+                      <Typography variant="caption" sx={{ color: '#6b7280', fontSize: '0.75rem' }}>
+                        Memory
+                      </Typography>
+                    </Box>
+                    <Typography variant="caption" sx={{ color: '#374151', fontSize: '0.75rem', fontWeight: 600 }}>
+                      {statusInfo.memoryUsage.toFixed(1)}%
+                    </Typography>
+                  </Box>
+                  <LinearProgress 
+                    variant="determinate" 
+                    value={statusInfo.memoryUsage} 
+                    sx={{
+                      height: 4,
+                      borderRadius: 2,
+                      backgroundColor: '#e5e7eb',
+                      '& .MuiLinearProgress-bar': {
+                        backgroundColor: statusInfo.memoryUsage > 85 ? '#ef4444' : 
+                                       statusInfo.memoryUsage > 70 ? '#f59e0b' : '#10b981',
+                        borderRadius: 2
+                      }
+                    }}
+                  />
+                </Box>
+
+                {/* Temperature */}
+                <Box>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      <Thermostat sx={{ fontSize: '0.875rem', color: '#6b7280' }} />
+                      <Typography variant="caption" sx={{ color: '#6b7280', fontSize: '0.75rem' }}>
+                        Temp
+                      </Typography>
+                    </Box>
+                    <Typography variant="caption" sx={{ color: '#374151', fontSize: '0.75rem', fontWeight: 600 }}>
+                      {statusInfo.temperature.toFixed(1)}°C
+                    </Typography>
+                  </Box>
+                  <LinearProgress 
+                    variant="determinate" 
+                    value={Math.min(100, (statusInfo.temperature / 100) * 100)} 
+                    sx={{
+                      height: 4,
+                      borderRadius: 2,
+                      backgroundColor: '#e5e7eb',
+                      '& .MuiLinearProgress-bar': {
+                        backgroundColor: statusInfo.temperature > 75 ? '#ef4444' : 
+                                       statusInfo.temperature > 60 ? '#f59e0b' : '#10b981',
+                        borderRadius: 2
+                      }
+                    }}
+                  />
+                </Box>
               </Box>
-            )}
-          </Box>
+
+              <Divider sx={{ my: 1.5 }} />
+
+              {/* Additional Info */}
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Typography variant="caption" sx={{ color: '#6b7280', fontSize: '0.75rem' }}>
+                    Uptime
+                  </Typography>
+                  <Chip
+                    label={statusInfo.uptime}
+                    size="small"
+                    sx={{
+                      height: 20,
+                      fontSize: '0.7rem',
+                      backgroundColor: 'rgba(107, 114, 128, 0.1)',
+                      color: '#374151',
+                      border: 'none'
+                    }}
+                  />
+                </Box>
+                
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Typography variant="caption" sx={{ color: '#6b7280', fontSize: '0.75rem' }}>
+                    Processes
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: '#374151', fontSize: '0.75rem', fontWeight: 500 }}>
+                    {statusInfo.processes}
+                  </Typography>
+                </Box>
+              </Box>
+            </>
+          )}
         </Paper>
       </Box>
     </Box>

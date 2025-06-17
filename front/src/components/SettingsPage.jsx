@@ -589,42 +589,7 @@ const SettingsPage = () => {
               )}
             </Box>
           </SettingCard>
-
-          {/* Database Settings */}
-          <SettingCard title="Database Configuration" icon={Storage}>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              <Alert severity="info" sx={{ mb: 2 }}>
-                Database settings are configured in the config file and cannot be changed from the interface.
-              </Alert>
-              
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Typography variant="body2" sx={{ color: '#6b7280' }}>Database URL:</Typography>
-                  <Chip 
-                    label="jdbc:postgresql://localhost:5432/dbd" 
-                    size="small" 
-                    sx={{ fontSize: '0.75rem' }}
-                  />
-                </Box>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Typography variant="body2" sx={{ color: '#6b7280' }}>User:</Typography>
-                  <Chip 
-                    label="root" 
-                    size="small" 
-                    sx={{ fontSize: '0.75rem' }}
-                  />
-                </Box>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Typography variant="body2" sx={{ color: '#6b7280' }}>Port:</Typography>
-                  <Chip 
-                    label="8080" 
-                    size="small" 
-                    sx={{ fontSize: '0.75rem' }}
-                  />
-                </Box>
-              </Box>
-            </Box>
-          </SettingCard>
+         
         </Grid>
       </Grid>
     </Box>

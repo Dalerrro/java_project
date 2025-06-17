@@ -24,7 +24,9 @@ import {
   CheckCircle,
   Warning,
   Error as ErrorIcon,
-  Memory as MemoryIcon
+  Memory as MemoryIcon,
+  Speed,
+  Bolt
 } from '@mui/icons-material';
 import {
   AreaChart,
@@ -37,74 +39,54 @@ import {
   LineChart,
   Line
 } from 'recharts';
+import api from '../services/api';
 
 const Overview = () => {
-  const [liveStats, setLiveStats] = useState(null);
-  const [metricsData, setMetricsData] = useState([]);
+  const [systemData, setSystemData] = useState(null);
+  const [historicalData, setHistoricalData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [lastUpdate, setLastUpdate] = useState(new Date());
 
-  // Загрузка live статистики
-  const fetchLiveStats = () => {
-    fetch('http://localhost:8080/status')
-      .then(res => res.json())
-      .then(data => {
-        console.log('Status API Response:', data); // Отладка
-        setLiveStats(data);
-        setError(null);
-      })
-      .catch(err => {
-        console.error('Error fetching live stats:', err);
-        setError('Unable to fetch live statistics');
+  // Загрузка данных системы
+  const fetchSystemData = async () => {
+    try {
+      const data = await api.getSystemCurrent();
+      setSystemData(data);
+      
+      // Добавляем точку в исторические данные
+      const point = {
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        cpu: data.currentMetrics.cpuUsage,
+        memory: data.currentMetrics.memoryUsagePercent,
+        timestamp: Date.now()
+      };
+      
+      setHistoricalData(prev => {
+        const newData = [...prev, point];
+        // Оставляем только последние 50 точек
+        return newData.slice(-50);
       });
-  };
-
-  // Загрузка исторических метрик
-  const fetchMetrics = () => {
-    fetch('http://localhost:8080/metrics')
-      .then(res => res.json())
-      .then(data => {
-        console.log('Metrics API Response:', data); // Отладка
-        const processedData = data
-          .reverse()
-          .slice(-24) // Последние 24 точки
-          .map((item, index) => {
-            const time = new Date(Date.now() - (data.length - 1 - index) * 60 * 1000);
-            return {
-              ...item,
-              time: time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-              memory_usage: Math.round((item.memory_used / item.memory_total) * 100)
-            };
-          });
-        setMetricsData(processedData);
-        setError(null);
-      })
-      .catch(err => {
-        console.error('Error fetching metrics:', err);
-        setError('Unable to fetch metrics data');
-      })
-      .finally(() => {
-        setLoading(false);
-        setLastUpdate(new Date());
-      });
+      
+      setError(null);
+      setLastUpdate(new Date());
+    } catch (err) {
+      console.error('Error fetching system data:', err);
+      setError('Unable to fetch system data');
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
-    const loadData = () => {
-      fetchLiveStats();
-      fetchMetrics();
-    };
-
-    loadData();
-    const interval = setInterval(loadData, 5000); // Обновляем каждые 5 секунд
+    fetchSystemData();
+    const interval = setInterval(fetchSystemData, 5000); // Обновляем каждые 5 секунд
     return () => clearInterval(interval);
   }, []);
 
   const handleRefresh = () => {
     setLoading(true);
-    fetchLiveStats();
-    fetchMetrics();
+    fetchSystemData();
   };
 
   // Компонент карточки метрики
@@ -289,7 +271,7 @@ const Overview = () => {
                 fontWeight: 500
               }}
             >
-              {entry.name}: {Math.round(entry.value)}%
+              {entry.name}: {entry.value.toFixed(1)}%
             </Typography>
           ))}
         </Box>
@@ -298,7 +280,7 @@ const Overview = () => {
     return null;
   };
 
-  if (loading && !liveStats) {
+  if (loading && !systemData) {
     return (
       <Box sx={{ p: 2 }}>
         <Grid container spacing={3}>
@@ -312,7 +294,7 @@ const Overview = () => {
     );
   }
 
-  if (error && !liveStats) {
+  if (error && !systemData) {
     return (
       <Alert
         severity="error"
@@ -335,22 +317,18 @@ const Overview = () => {
   };
 
   // Определяем статусы для каждой метрики
-  // Берем данные из последней записи metrics для CPU, Memory, Disk
-  const latestMetrics = metricsData.length > 0 ? metricsData[metricsData.length - 1] : null;
-  
-  const cpuUsage = latestMetrics?.cpu || 0;
+  const cpuUsage = systemData?.currentMetrics?.cpuUsage || 0;
   const cpuStatus = getMetricStatus(cpuUsage, { warning: 80, critical: 95 });
   
-  const memoryUsage = latestMetrics ? Math.round((latestMetrics.memory_used / latestMetrics.memory_total) * 100) : 0;
+  const memoryUsage = systemData?.currentMetrics?.memoryUsagePercent || 0;
   const memoryStatus = getMetricStatus(memoryUsage, { warning: 85, critical: 95 });
   
-  const diskUsage = latestMetrics?.disk_usage || 0;
-  const diskStatus = getMetricStatus(diskUsage, { warning: 80, critical: 90 });
+  const temperature = systemData?.sensorData?.cpuTemperature || 0;
+  const tempStatus = getMetricStatus(temperature, { warning: 70, critical: 85 });
 
-  // Данные из /status для остальных метрик
-  const networkUsage = 0; // Пока нет в API
-  const temperature = liveStats?.cpu_temp || 0;
-  const processes = liveStats?.processes || 0;
+  const cpuFrequency = systemData?.cpuDetails?.currentFrequency || 0;
+  const processes = systemData?.staticInfo?.processes || 0;
+  const cpuVoltage = systemData?.sensorData?.cpuVoltage || 0;
 
   return (
     <Box>
@@ -361,7 +339,7 @@ const Overview = () => {
             System Overview
           </Typography>
           <Typography variant="body1" sx={{ color: '#6b7280' }}>
-            Real-time monitoring dashboard
+            Real-time monitoring dashboard with OSHI
           </Typography>
         </Box>
         <Chip
@@ -381,7 +359,6 @@ const Overview = () => {
             icon={Computer}
             status={cpuStatus}
             progress={cpuUsage}
-            trend={2.3}
           />
         </Grid>
 
@@ -393,40 +370,36 @@ const Overview = () => {
             icon={MemoryIcon}
             status={memoryStatus}
             progress={memoryUsage}
-            trend={-1.2}
           />
         </Grid>
 
         <Grid item xs={12} sm={6} md={4}>
           <MetricCard
-            title="Disk Usage"
-            value={diskUsage}
-            unit="%"
-            icon={Storage}
-            status={diskStatus}
-            progress={diskUsage}
-            trend={0.8}
-          />
-        </Grid>
-
-        <Grid item xs={12} sm={6} md={4}>
-          <MetricCard
-            title="Network"
-            value={networkUsage}
-            unit="MB/s"
-            icon={Wifi}
-            status="healthy"
-            trend={5.2}
-          />
-        </Grid>
-
-        <Grid item xs={12} sm={6} md={4}>
-          <MetricCard
-            title="Temperature"
+            title="CPU Temperature"
             value={temperature}
             unit="°C"
             icon={Thermostat}
-            status={temperature > 75 ? 'warning' : 'healthy'}
+            status={tempStatus}
+          />
+        </Grid>
+
+        <Grid item xs={12} sm={6} md={4}>
+          <MetricCard
+            title="CPU Frequency"
+            value={cpuFrequency}
+            unit="GHz"
+            icon={Speed}
+            status="healthy"
+          />
+        </Grid>
+
+        <Grid item xs={12} sm={6} md={4}>
+          <MetricCard
+            title="CPU Voltage"
+            value={cpuVoltage}
+            unit="V"
+            icon={Bolt}
+            status="healthy"
           />
         </Grid>
 
@@ -451,12 +424,12 @@ const Overview = () => {
                   Resource Usage Trends
                 </Typography>
                 <Typography variant="body2" sx={{ color: '#6b7280' }}>
-                  Last 24 hours
+                  Live monitoring
                 </Typography>
               </Box>
 
               <ResponsiveContainer width="100%" height={350}>
-                <AreaChart data={metricsData}>
+                <AreaChart data={historicalData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                   <XAxis 
                     dataKey="time" 
@@ -482,21 +455,12 @@ const Overview = () => {
                   />
                   <Area
                     type="monotone"
-                    dataKey="memory_usage"
+                    dataKey="memory"
                     stackId="1"
                     stroke="#10b981"
                     fill="#10b981"
                     fillOpacity={0.6}
                     name="Memory"
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="disk_usage"
-                    stackId="1"
-                    stroke="#f59e0b"
-                    fill="#f59e0b"
-                    fillOpacity={0.6}
-                    name="Disk"
                   />
                 </AreaChart>
               </ResponsiveContainer>
@@ -563,31 +527,6 @@ const Overview = () => {
                   />
                 </Box>
 
-                {/* Disk Progress */}
-                <Box>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                    <Typography variant="body2" sx={{ fontWeight: 500, color: '#374151' }}>
-                      Disk Usage
-                    </Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 600, color: '#111827' }}>
-                      {diskUsage.toFixed(1)}%
-                    </Typography>
-                  </Box>
-                  <LinearProgress
-                    variant="determinate"
-                    value={diskUsage}
-                    sx={{
-                      height: 8,
-                      borderRadius: 4,
-                      backgroundColor: '#f3f4f6',
-                      '& .MuiLinearProgress-bar': {
-                        backgroundColor: diskStatus === 'critical' ? '#ef4444' : diskStatus === 'warning' ? '#f59e0b' : '#f59e0b',
-                        borderRadius: 4
-                      }
-                    }}
-                  />
-                </Box>
-
                 {/* System Details */}
                 <Box sx={{ pt: 2, borderTop: '1px solid #e5e7eb' }}>
                   <Typography variant="subtitle2" sx={{ fontWeight: 600, color: '#111827', mb: 2 }}>
@@ -596,18 +535,31 @@ const Overview = () => {
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                       <Typography variant="body2" sx={{ color: '#6b7280' }}>
-                        Uptime
+                        OS
                       </Typography>
                       <Typography variant="body2" sx={{ fontWeight: 500, color: '#111827' }}>
-                        {liveStats?.uptime || 'N/A'}
+                        {systemData?.staticInfo?.osName || 'N/A'}
                       </Typography>
                     </Box>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                       <Typography variant="body2" sx={{ color: '#6b7280' }}>
-                        Processes
+                        Uptime
                       </Typography>
                       <Typography variant="body2" sx={{ fontWeight: 500, color: '#111827' }}>
-                        {liveStats?.processes || 'N/A'}
+                        {systemData?.staticInfo?.uptime || 'N/A'}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <Typography variant="body2" sx={{ color: '#6b7280' }}>
+                        CPU Model
+                      </Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 500, color: '#111827', 
+                        overflow: 'hidden', 
+                        textOverflow: 'ellipsis', 
+                        whiteSpace: 'nowrap',
+                        maxWidth: '200px'
+                      }}>
+                        {systemData?.cpuDetails?.name || 'N/A'}
                       </Typography>
                     </Box>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -615,24 +567,29 @@ const Overview = () => {
                         CPU Cores
                       </Typography>
                       <Typography variant="body2" sx={{ fontWeight: 500, color: '#111827' }}>
-                        {liveStats?.logical_cores || 'N/A'} logical
+                        {systemData?.staticInfo?.physicalCores || 0} / {systemData?.staticInfo?.logicalCores || 0}
                       </Typography>
                     </Box>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                       <Typography variant="body2" sx={{ color: '#6b7280' }}>
-                        CPU Frequency
+                        Total Memory
                       </Typography>
                       <Typography variant="body2" sx={{ fontWeight: 500, color: '#111827' }}>
-                        {liveStats?.cpu_freq ? `${liveStats.cpu_freq.toFixed(2)} GHz` : 'N/A'}
+                        {systemData?.currentMetrics?.memoryTotal 
+                          ? `${(systemData.currentMetrics.memoryTotal / 1024 / 1024 / 1024).toFixed(1)} GB`
+                          : 'N/A'}
                       </Typography>
                     </Box>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                       <Typography variant="body2" sx={{ color: '#6b7280' }}>
-                        Temperature
+                        Turbo Boost
                       </Typography>
-                      <Typography variant="body2" sx={{ fontWeight: 500, color: '#111827' }}>
-                        {liveStats?.cpu_temp ? `${liveStats.cpu_temp.toFixed(1)}°C` : 'N/A'}
-                      </Typography>
+                      <Chip 
+                        label={systemData?.cpuDetails?.boostActive ? 'Active' : 'Inactive'}
+                        size="small"
+                        color={systemData?.cpuDetails?.boostActive ? 'success' : 'default'}
+                        sx={{ height: 20, fontSize: '0.75rem' }}
+                      />
                     </Box>
                   </Box>
                 </Box>
@@ -646,7 +603,7 @@ const Overview = () => {
       <Card elevation={0} sx={{ border: '1px solid #e5e7eb', borderRadius: 3, mt: 3 }}>
         <CardContent sx={{ p: 3 }}>
           <Typography variant="h6" sx={{ fontWeight: 600, color: '#111827', mb: 3 }}>
-            Recent Activity
+            System Status
           </Typography>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <Box
@@ -663,10 +620,10 @@ const Overview = () => {
               <CheckCircle sx={{ color: '#10b981', fontSize: '1.25rem', mt: 0.25 }} />
               <Box sx={{ flex: 1 }}>
                 <Typography variant="body2" sx={{ fontWeight: 500, color: '#111827' }}>
-                  System monitoring started successfully
+                  System monitoring active
                 </Typography>
                 <Typography variant="caption" sx={{ color: '#6b7280' }}>
-                  {new Date().toLocaleString()}
+                  OSHI library connected successfully
                 </Typography>
               </Box>
             </Box>
@@ -689,13 +646,13 @@ const Overview = () => {
                     High CPU usage detected ({cpuUsage.toFixed(1)}%)
                   </Typography>
                   <Typography variant="caption" sx={{ color: '#6b7280' }}>
-                    Active monitoring
+                    Consider checking running processes
                   </Typography>
                 </Box>
               </Box>
             )}
 
-            {memoryStatus === 'warning' && (
+            {tempStatus === 'warning' && (
               <Box
                 sx={{
                   display: 'flex',
@@ -710,10 +667,10 @@ const Overview = () => {
                 <Warning sx={{ color: '#f59e0b', fontSize: '1.25rem', mt: 0.25 }} />
                 <Box sx={{ flex: 1 }}>
                   <Typography variant="body2" sx={{ fontWeight: 500, color: '#111827' }}>
-                    High memory usage detected ({memoryUsage.toFixed(1)}%)
+                    High CPU temperature ({temperature.toFixed(1)}°C)
                   </Typography>
                   <Typography variant="caption" sx={{ color: '#6b7280' }}>
-                    Active monitoring
+                    Check system cooling
                   </Typography>
                 </Box>
               </Box>
