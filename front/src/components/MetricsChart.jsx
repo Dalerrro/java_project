@@ -23,7 +23,8 @@ import {
   Skeleton,
   Chip,
 } from '@mui/material';
-import { Refresh, TrendingUp, Memory, Storage, Computer } from '@mui/icons-material';
+import { Refresh, TrendingUp, Memory, Storage, Computer, Thermostat, Bolt } from '@mui/icons-material';
+import api from '../services/api'; // Импортируем api из того же модуля, что в Overview.jsx
 
 // Кастомный тултип для графиков
 const CustomTooltip = ({ active, payload, label }) => {
@@ -59,7 +60,7 @@ const CustomTooltip = ({ active, payload, label }) => {
               }}
             />
             <Typography variant="body2" sx={{ color: 'white', fontWeight: 500 }}>
-              {entry.name}: {Math.round(entry.value)}%
+              {entry.name}: {entry.unit === '°C' || entry.unit === 'V' ? entry.value.toFixed(1) : Math.round(entry.value)}{entry.unit}
             </Typography>
           </Box>
         ))}
@@ -69,7 +70,7 @@ const CustomTooltip = ({ active, payload, label }) => {
   return null;
 };
 
-// Кастомный тултип для donut диаграмм
+// Кастомный тултип для donut-диаграмм
 const DonutTooltip = ({ active, payload }) => {
   if (active && payload?.length) {
     const data = payload[0];
@@ -80,12 +81,12 @@ const DonutTooltip = ({ active, payload }) => {
           backdropFilter: 'blur(10px)',
           padding: '12px 16px',
           borderRadius: '8px',
-          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3)',
+          boxShadow: '0 4px 20px rgba(0, 0, 0, ошибка: 0.3)',
           border: '1px solid rgba(255, 255, 255, 0.1)',
         }}
       >
         <Typography variant="body2" sx={{ color: 'white', fontWeight: 600 }}>
-          {data.name}: {data.value}%
+          {data.name}: {data.value.toFixed(1)}%
         </Typography>
       </Box>
     );
@@ -93,10 +94,10 @@ const DonutTooltip = ({ active, payload }) => {
   return null;
 };
 
-// Компонент Donut диаграммы
-const DonutChart = ({ data, colors, title, icon, currentValue }) => {
-  const centerText = `${currentValue}%`;
-  
+// Компонент Donut-диаграммы
+const DonutChart = ({ data, colors, title, icon, currentValue, unit }) => {
+  const centerText = unit === '%' ? `${Math.round(currentValue)}%` : `${currentValue.toFixed(1)}${unit}`;
+
   return (
     <Card
       sx={{
@@ -190,7 +191,7 @@ const DonutChart = ({ data, colors, title, icon, currentValue }) => {
                 fontWeight: 600
               }}
             >
-              Использовано
+              {unit === '%' ? 'Использовано' : unit === '°C' ? 'Температура' : 'Вольтаж'}
             </Typography>
           </Box>
         </Box>
@@ -199,7 +200,7 @@ const DonutChart = ({ data, colors, title, icon, currentValue }) => {
           {data.map((entry, index) => (
             <Chip
               key={entry.name}
-              label={`${entry.name}: ${entry.value}%`}
+              label={`${entry.name}: ${entry.value.toFixed(1)}%`}
               size="small"
               sx={{
                 bgcolor: `${colors[index]}20`,
@@ -222,43 +223,36 @@ const MetricsChart = () => {
   const [error, setError] = useState(null);
   const [lastUpdate, setLastUpdate] = useState(new Date());
 
-  // Функция загрузки метрик из /metrics
-  const fetchMetrics = useCallback(() => {
+  const fetchMetrics = useCallback(async () => {
     setLoading(true);
-    fetch('http://localhost:8080/metrics')
-      .then((res) => res.json())
-      .then((json) => {
-        const mapped = json
-          .reverse()
-          .map((item, idx) => {
-            const memory_usage = Math.round(
-              (item.memory_used / item.memory_total) * 100
-            );
-            const time = new Date(
-              Date.now() - (json.length - 1 - idx) * 60 * 1000
-            );
-            const timestamp = time.toLocaleTimeString([], {
-              hour: '2-digit',
-              minute: '2-digit',
-            });
-            return { ...item, memory_usage, timestamp };
-          });
-        setData(mapped);
-        setError(null);
-        setLastUpdate(new Date());
-      })
-      .catch((err) => {
-        console.error('Ошибка получения /metrics:', err);
-        setError('Не удалось загрузить метрики. Нажмите «↻» для повтора.');
-      })
-      .finally(() => {
-        setLoading(false);
+    try {
+      const systemData = await api.getSystemCurrent(); // Используем тот же API-вызов, что в Overview.jsx
+      const point = {
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        cpu: systemData.currentMetrics?.cpuUsage || 0,
+        memory_usage: systemData.currentMetrics?.memoryUsagePercent || 0,
+        disk_usage: systemData.currentMetrics?.diskUsagePercent || 0,
+        cpu_temperature: systemData.sensorData?.cpuTemperature || 0,
+        cpu_voltage: systemData.sensorData?.cpuVoltage || 0,
+      };
+      
+      setData(prev => {
+        const newData = [...prev, point];
+        return newData.slice(-50); // Оставляем последние 50 точек
       });
+      setError(null);
+      setLastUpdate(new Date());
+    } catch (err) {
+      console.error('Ошибка получения /api/system/current:', err);
+      setError('Не удалось загрузить метрики. Нажмите «↻» для повтора.');
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => {
     fetchMetrics();
-    const interval = setInterval(fetchMetrics, 30000); // каждые 30 секунд для быстрого обновления
+    const interval = setInterval(fetchMetrics, 5000); // Обновляем каждые 5 секунд, как в Overview.jsx
     return () => clearInterval(interval);
   }, [fetchMetrics]);
 
@@ -312,28 +306,43 @@ const MetricsChart = () => {
 
   const length = data.length;
   const tickInterval = Math.max(1, Math.floor(length / 8));
-  const horizontalLines = [25, 50, 75];
   const gridColor = 'rgba(255, 255, 255, 0.08)';
 
-  // Данные для donut диаграмм (берем последние значения)
-  const latestData = data[data.length - 1] || { cpu: 0, memory_usage: 0, disk_usage: 0 };
-  
+  // Данные для donut-диаграмм
+  const latestData = data[data.length - 1] || {
+    cpu: 0,
+    memory_usage: 0,
+    disk_usage: 0,
+    cpu_temperature: 0,
+    cpu_voltage: 0,
+  };
+
   const cpuDonutData = [
     { name: 'Используется', value: latestData.cpu },
-    { name: 'Свободно', value: 100 - latestData.cpu }
-  ];
-  
-  const memoryDonutData = [
-    { name: 'Используется', value: latestData.memory_usage },
-    { name: 'Свободно', value: 100 - latestData.memory_usage }
-  ];
-  
-  const diskDonutData = [
-    { name: 'Используется', value: latestData.disk_usage },
-    { name: 'Свободно', value: 100 - latestData.disk_usage }
+    { name: 'Свободно', value: 100 - latestData.cpu },
   ];
 
-  const renderAreaChart = (dataKey, name, color, gradientId, height = 350) => (
+  const memoryDonutData = [
+    { name: 'Используется', value: latestData.memory_usage },
+    { name: 'Свободно', value: 100 - latestData.memory_usage },
+  ];
+
+  const diskDonutData = [
+    { name: 'Используется', value: latestData.disk_usage },
+    { name: 'Свободно', value: 100 - latestData.disk_usage },
+  ];
+
+  const tempDonutData = [
+    { name: 'Температура', value: latestData.cpu_temperature },
+    { name: 'Макс', value: 100 - latestData.cpu_temperature }, // Предполагаем 100°C как максимум для нормализации
+  ];
+
+  const voltageDonutData = [
+    { name: 'Вольтаж', value: (latestData.cpu_voltage / 2) * 100 }, // Нормализуем вольтаж (макс 2V)
+    { name: 'Макс', value: 100 - (latestData.cpu_voltage / 2) * 100 },
+  ];
+
+  const renderAreaChart = (dataKey, name, color, gradientId, unit = '%', height = 350) => (
     <Card
       sx={{
         bgcolor: 'rgba(0, 0, 0, 0.9)',
@@ -382,7 +391,7 @@ const MetricsChart = () => {
           
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <Chip
-              label={`${Math.round(latestData[dataKey] || 0)}%`}
+              label={unit === '%' ? `${Math.round(latestData[dataKey] || 0)}%` : `${latestData[dataKey].toFixed(1)}${unit}`}
               size="small"
               sx={{
                 bgcolor: `${color}20`,
@@ -418,21 +427,11 @@ const MetricsChart = () => {
               </linearGradient>
             </defs>
 
-            {horizontalLines.map((value) => (
-              <ReferenceLine
-                key={value}
-                y={value}
-                stroke={gridColor}
-                strokeWidth={1}
-                strokeDasharray="5 5"
-              />
-            ))}
-
             <YAxis
-              domain={[0, 100]}
+              domain={[0, unit === '°C' ? 100 : unit === 'V' ? 2 : 100]} // Устанавливаем максимум для температуры и вольтажа
               tick={{ fill: 'rgba(255, 255, 255, 0.7)', fontSize: 12 }}
               axisLine={{ stroke: 'rgba(255, 255, 255, 0.2)', strokeWidth: 1 }}
-              tickFormatter={(v) => `${v}%`}
+              tickFormatter={(v) => `${v}${unit}`}
               width={50}
             />
 
@@ -444,7 +443,7 @@ const MetricsChart = () => {
               tickMargin={10}
             />
 
-            <Tooltip content={<CustomTooltip />} />
+            <Tooltip content={<CustomTooltip unit={unit} />} />
 
             <Area
               type="monotone"
@@ -463,6 +462,7 @@ const MetricsChart = () => {
                 fill: '#000',
                 boxShadow: `0 0 10px ${color}`
               }}
+              unit={unit}
             />
           </AreaChart>
         </ResponsiveContainer>
@@ -477,7 +477,7 @@ const MetricsChart = () => {
             fontSize: '0.75rem'
           }}
         >
-          🔄 Обновлено: {lastUpdate.toLocaleTimeString()} • Автообновление каждые 30 сек
+          🔄 Обновлено: {lastUpdate.toLocaleTimeString()} • Автообновление каждые 5 сек
         </Typography>
       </CardContent>
     </Card>
@@ -485,35 +485,60 @@ const MetricsChart = () => {
 
   return (
     <Box sx={{ flexGrow: 1, mt: 4 }}>
-      {/* Donut диаграммы */}
+      {/* Donut-диаграммы */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} sm={6} lg={4}>
+        <Grid item xs={12} sm={6} lg={2.4}>
           <DonutChart
             data={cpuDonutData}
             colors={['#1976d2', 'rgba(25, 118, 210, 0.1)']}
             title="Процессор"
             icon={<Computer sx={{ color: '#1976d2' }} />}
             currentValue={latestData.cpu}
+            unit="%"
           />
         </Grid>
         
-        <Grid item xs={12} sm={6} lg={4}>
+        <Grid item xs={12} sm={6} lg={2.4}>
           <DonutChart
             data={memoryDonutData}
             colors={['#4caf50', 'rgba(76, 175, 80, 0.1)']}
             title="Память"
             icon={<Memory sx={{ color: '#4caf50' }} />}
             currentValue={latestData.memory_usage}
+            unit="%"
           />
         </Grid>
         
-        <Grid item xs={12} sm={6} lg={4}>
+        <Grid item xs={12} sm={6} lg={2.4}>
           <DonutChart
             data={diskDonutData}
             colors={['#ff9800', 'rgba(255, 152, 0, 0.1)']}
             title="Диск"
             icon={<Storage sx={{ color: '#ff9800' }} />}
             currentValue={latestData.disk_usage}
+            unit="%"
+          />
+        </Grid>
+        
+        <Grid item xs={12} sm={6} lg={2.4}>
+          <DonutChart
+            data={tempDonutData}
+            colors={['#e91e63', 'rgba(233, 30, 99, 0.1)']}
+            title="Температура CPU"
+            icon={<Thermostat sx={{ color: '#e91e63' }} />}
+            currentValue={latestData.cpu_temperature}
+            unit="°C"
+          />
+        </Grid>
+        
+        <Grid item xs={12} sm={6} lg={2.4}>
+          <DonutChart
+            data={voltageDonutData}
+            colors={['#ab47bc', 'rgba(171, 71, 188, 0.1)']}
+            title="Вольтаж CPU"
+            icon={<Bolt sx={{ color: '#ab47bc' }} />}
+            currentValue={latestData.cpu_voltage}
+            unit="V"
           />
         </Grid>
       </Grid>
@@ -521,15 +546,23 @@ const MetricsChart = () => {
       {/* Графики временных рядов */}
       <Grid container spacing={3}>
         <Grid item xs={12} lg={6}>
-          {renderAreaChart('cpu', 'Загрузка Процессора', '#1976d2', 'gradientCPU', 400)}
+          {renderAreaChart('cpu', 'Загрузка Процессора', '#1976d2', 'gradientCPU', '%', 400)}
         </Grid>
 
         <Grid item xs={12} lg={6}>
-          {renderAreaChart('memory_usage', 'Использование Памяти', '#4caf50', 'gradientMem', 400)}
+          {renderAreaChart('memory_usage', 'Использование Памяти', '#4caf50', 'gradientMem', '%', 400)}
+        </Grid>
+        
+        <Grid item xs={12} lg={6}>
+          {renderAreaChart('disk_usage', 'Использование Диска', '#ff9800', 'gradientDisk', '%', 400)}
+        </Grid>
+        
+        <Grid item xs={12} lg={6}>
+          {renderAreaChart('cpu_temperature', 'Температура CPU', '#e91e63', 'gradientTemp', '°C', 400)}
         </Grid>
         
         <Grid item xs={12}>
-          {renderAreaChart('disk_usage', 'Использование Диска', '#ff9800', 'gradientDisk', 300)}
+          {renderAreaChart('cpu_voltage', 'Вольтаж CPU', '#ab47bc', 'gradientVoltage', 'V', 300)}
         </Grid>
       </Grid>
     </Box>

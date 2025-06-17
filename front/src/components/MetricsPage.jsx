@@ -215,7 +215,7 @@ const MetricsPage = () => {
           Detailed Metrics
         </Typography>
         <Typography variant="body1" sx={{ color: '#6b7280' }}>
-          Real-time system performance analytics with OSHI
+          Real-time system graphics performance 
         </Typography>
       </Box>
 

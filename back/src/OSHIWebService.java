@@ -45,7 +45,6 @@ public class OSHIWebService implements HttpHandler {
                     break;
             }
             
-            // Отправляем ответ
             byte[] responseBytes = response.getBytes(StandardCharsets.UTF_8);
             exchange.sendResponseHeaders(200, responseBytes.length);
             

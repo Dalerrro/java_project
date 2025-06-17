@@ -20,7 +20,8 @@ import {
   ListItem,
   ListItemIcon,
   ListItemText,
-  ListItemSecondaryAction
+  ListItemSecondaryAction,
+  Snackbar
 } from '@mui/material';
 import { 
   NotificationsActive,
@@ -40,25 +41,18 @@ import {
 } from '@mui/icons-material';
 import api from '../services/api';
 import telegramService from '../services/telegram';
+import settingsService from '../services/settings';
 
 const AlertsPage = () => {
-  const [thresholds, setThresholds] = useState({
-    cpu: { enabled: true, warning: 80, critical: 95 },
-    memory: { enabled: true, warning: 85, critical: 95 },
-    temperature: { enabled: true, warning: 70, critical: 85 },
-    frequency: { enabled: false, warning: 4.5, critical: 5.0 }
-  });
-
-  const [telegramConfig, setTelegramConfig] = useState({
-    botToken: telegramService.config.botToken,
-    chatId: telegramService.config.chatId,
-    enabled: telegramService.config.enabled
-  });
-
+  const [thresholds, setThresholds] = useState(settingsService.getThresholds());
+  const [telegramConfig, setTelegramConfig] = useState(settingsService.getTelegramSettings());
   const [currentMetrics, setCurrentMetrics] = useState(null);
   const [editMode, setEditMode] = useState(false);
   const [testingBot, setTestingBot] = useState(false);
   const [alertHistory, setAlertHistory] = useState([]);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [snackbarSeverity, setSnackbarSeverity] = useState('success');
 
   useEffect(() => {
     // Получаем текущие метрики для отображения
@@ -149,8 +143,27 @@ const AlertsPage = () => {
   };
 
   const handleSaveConfig = () => {
-    telegramService.updateConfig(telegramConfig);
+    // Сохраняем пороги
+    settingsService.saveThresholds(thresholds);
+    
+    // Сохраняем Telegram настройки
+    settingsService.saveTelegramSettings(telegramConfig);
+    
     setEditMode(false);
+    showSnackbar('Alert settings saved successfully!', 'success');
+  };
+
+  const handleCancelEdit = () => {
+    // Восстанавливаем настройки из storage
+    setThresholds(settingsService.getThresholds());
+    setTelegramConfig(settingsService.getTelegramSettings());
+    setEditMode(false);
+  };
+
+  const showSnackbar = (message, severity = 'success') => {
+    setSnackbarMessage(message);
+    setSnackbarSeverity(severity);
+    setSnackbarOpen(true);
   };
 
   const getMetricIcon = (metric) => {
@@ -342,7 +355,7 @@ const AlertsPage = () => {
               <Button
                 variant="outlined"
                 startIcon={<Cancel />}
-                onClick={() => setEditMode(false)}
+                onClick={handleCancelEdit}
                 sx={{ borderColor: '#d1d5db', color: '#374151' }}
               >
                 Cancel
@@ -430,9 +443,9 @@ const AlertsPage = () => {
                   <Button
                     fullWidth
                     variant="outlined"
-                    startIcon={<Science />}
+                    startIcon={<Science/>}
                     onClick={handleTestTelegram}
-                    disabled={testingBot}
+                    disabled={testingBot || !telegramConfig.enabled}
                   >
                     {testingBot ? 'Sending Test...' : 'Send Test Message'}
                   </Button>
@@ -503,6 +516,22 @@ const AlertsPage = () => {
           </Card>
         </Grid>
       </Grid>
+
+      {/* Snackbar для уведомлений */}
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={4000}
+        onClose={() => setSnackbarOpen(false)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Alert
+          onClose={() => setSnackbarOpen(false)}
+          severity={snackbarSeverity}
+          sx={{ width: '100%' }}
+        >
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

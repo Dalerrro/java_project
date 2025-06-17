@@ -1,5 +1,3 @@
-// src/components/SettingsPage.jsx
-
 import React, { useState } from 'react';
 import {
   Box,
@@ -36,44 +34,11 @@ import {
   CheckCircle,
   Warning
 } from '@mui/icons-material';
+import settingsService from '../services/settings';
+import telegramService from '../services/telegram';
 
 const SettingsPage = () => {
-  const [settings, setSettings] = useState({
-    // Мониторинг настройки
-    monitoring: {
-      updateInterval: 5,
-      dataRetention: 7,
-      autoCleanup: true,
-      enableCpuMonitoring: true,
-      enableMemoryMonitoring: true,
-      enableDiskMonitoring: true,
-      enableNetworkMonitoring: false,
-      enableTemperatureMonitoring: true
-    },
-    // Telegram настройки
-    telegram: {
-      botToken: '7763857597:AAFB3eIcwlbBmCnBIT1WbkrjsdvupalqC1w',
-      chatId: '390304506',
-      enabled: true,
-      messageFormat: 'detailed',
-      language: 'ru',
-      workingHours: true,
-      workingHoursStart: '09:00',
-      workingHoursEnd: '18:00',
-      quietMode: false,
-      quietModeStart: '22:00',
-      quietModeEnd: '08:00'
-    },
-    // Интерфейс настройки
-    interface: {
-      theme: 'light',
-      autoRefresh: true,
-      showAnimations: true,
-      compactView: false,
-      showTooltips: true
-    }
-  });
-
+  const [settings, setSettings] = useState(settingsService.getSettings());
   const [showToken, setShowToken] = useState(false);
   const [saveStatus, setSaveStatus] = useState(null);
   const [testingConnection, setTestingConnection] = useState(false);
@@ -90,27 +55,32 @@ const SettingsPage = () => {
 
   const handleSave = () => {
     setSaveStatus('saving');
-    // Здесь будет логика сохранения настроек
-    setTimeout(() => {
+    try {
+      settingsService.saveMonitoringSettings(settings.monitoring);
+      settingsService.saveTelegramSettings(settings.telegram);
+      settingsService.saveInterfaceSettings(settings.interface);
       setSaveStatus('success');
-      setTimeout(() => setSaveStatus(null), 3000);
-    }, 1000);
+    } catch (err) {
+      console.error('Failed to save settings:', err);
+      setSaveStatus('error');
+    }
+    setTimeout(() => setSaveStatus(null), 3000);
   };
 
   const handleReset = () => {
-    // Сброс к настройкам по умолчанию
+    const defaultSettings = settingsService.resetToDefaults();
+    setSettings(defaultSettings);
     setSaveStatus('reset');
-    setTimeout(() => setSaveStatus(null), 2000);
+    setTimeout(() => setSaveStatus(null), 3000);
   };
 
   const handleTestTelegram = () => {
     setTestingConnection(true);
-    // Здесь будет логика тестирования Telegram
-    setTimeout(() => {
+    telegramService.sendTestMessage().then(result => {
       setTestingConnection(false);
-      setSaveStatus('telegram_test');
+      setSaveStatus(result.success ? 'telegram_test' : 'error');
       setTimeout(() => setSaveStatus(null), 3000);
-    }, 2000);
+    });
   };
 
   const SettingCard = ({ title, icon: Icon, children }) => (
@@ -301,17 +271,6 @@ const SettingsPage = () => {
                   <FormControlLabel
                     control={
                       <Switch
-                        checked={settings.monitoring.enableNetworkMonitoring}
-                        onChange={(e) => handleSettingChange('monitoring', 'enableNetworkMonitoring', e.target.checked)}
-                        size="small"
-                      />
-                    }
-                    label="Network Usage"
-                    disabled
-                  />
-                  <FormControlLabel
-                    control={
-                      <Switch
                         checked={settings.monitoring.enableTemperatureMonitoring}
                         onChange={(e) => handleSettingChange('monitoring', 'enableTemperatureMonitoring', e.target.checked)}
                         size="small"
@@ -348,8 +307,7 @@ const SettingsPage = () => {
                     onChange={(e) => handleSettingChange('interface', 'theme', e.target.value)}
                   >
                     <MenuItem value="light">Light Theme</MenuItem>
-                    <MenuItem value="dark" disabled>Dark Theme (Coming Soon)</MenuItem>
-                    <MenuItem value="auto" disabled>Auto (System)</MenuItem>
+                    <MenuItem value="dark">Dark Theme</MenuItem>
                   </Select>
                 </FormControl>
               </Box>
@@ -445,7 +403,7 @@ const SettingsPage = () => {
                       }}
                     />
                     <Typography variant="caption" sx={{ color: '#6b7280', mt: 0.5, display: 'block' }}>
-                      Get token from @BotFather in Telegram
+                      @BotFather in Telegram
                     </Typography>
                   </Box>
 

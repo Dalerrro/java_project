@@ -416,10 +416,10 @@ const Overview = () => {
       {/* Charts Section */}
       <Grid container spacing={3}>
         {/* Main Area Chart */}
-        <Grid item xs={12} lg={8}>
+        <Grid item xs={12} md={10} lg={10}>
           <Card elevation={0} sx={{ border: '1px solid #e5e7eb', borderRadius: 3 }}>
             <CardContent sx={{ p: 3 }}>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, gap: 1 }}>
                 <Typography variant="h6" sx={{ fontWeight: 600, color: '#111827' }}>
                   Resource Usage Trends
                 </Typography>
@@ -469,7 +469,7 @@ const Overview = () => {
         </Grid>
 
         {/* System Info Sidebar */}
-        <Grid item xs={12} lg={4}>
+        <Grid item xs={12} md={4} lg={4}>
           <Card elevation={0} sx={{ border: '1px solid #e5e7eb', borderRadius: 3, height: '100%' }}>
             <CardContent sx={{ p: 3 }}>
               <Typography variant="h6" sx={{ fontWeight: 600, color: '#111827', mb: 3 }}>
@@ -549,7 +549,7 @@ const Overview = () => {
                         {systemData?.staticInfo?.uptime || 'N/A'}
                       </Typography>
                     </Box>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1 }}>
                       <Typography variant="body2" sx={{ color: '#6b7280' }}>
                         CPU Model
                       </Typography>
@@ -581,15 +581,6 @@ const Overview = () => {
                       </Typography>
                     </Box>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <Typography variant="body2" sx={{ color: '#6b7280' }}>
-                        Turbo Boost
-                      </Typography>
-                      <Chip 
-                        label={systemData?.cpuDetails?.boostActive ? 'Active' : 'Inactive'}
-                        size="small"
-                        color={systemData?.cpuDetails?.boostActive ? 'success' : 'default'}
-                        sx={{ height: 20, fontSize: '0.75rem' }}
-                      />
                     </Box>
                   </Box>
                 </Box>

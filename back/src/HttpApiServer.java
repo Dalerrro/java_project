@@ -6,9 +6,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 
-/**
- * HTTP API сервер для системного мониторинга с OSHI
- */
+
 public class HttpApiServer {
     
     private HttpServer server;
@@ -19,35 +17,26 @@ public class HttpApiServer {
         this.port = port;
         this.oshiService = new OSHIWebService();
     }
-    
-    /**
-     * Запуск HTTP сервера
-     */
+
     public void start() throws IOException {
         server = HttpServer.create(new InetSocketAddress(port), 0);
+                setupOSHIEndpoints();
         
-        // Настраиваем OSHI endpoints
-        setupOSHIEndpoints();
-        
-        // Добавляем общие endpoints
         setupGeneralEndpoints();
         
-        // Запускаем сервер
         server.setExecutor(null);
         server.start();
         
         System.out.println("=== HTTP API SERVER STARTED ===");
-        System.out.println("🚀 Сервер запущен на порту: " + port);
-        System.out.println("🌐 Базовый URL: http://localhost:" + port);
+        System.out.println("Сервер запущен на порту: " + port);
+        System.out.println("Базовый URL: http://localhost:" + port);
     }
     
-    /**
-     * Остановка сервера
-     */
+
     public void stop() {
         if (server != null) {
             server.stop(0);
-            System.out.println("🛑 HTTP сервер остановлен");
+            System.out.println("HTTP сервер остановлен");
         }
     }
     

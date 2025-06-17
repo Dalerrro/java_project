@@ -1,5 +1,3 @@
-// back/src/SimpleSystemInfo.java
-
 import oshi.SystemInfo;
 import oshi.hardware.CentralProcessor;
 import oshi.hardware.GlobalMemory;
@@ -7,9 +5,7 @@ import oshi.hardware.HardwareAbstractionLayer;
 import oshi.hardware.Sensors;
 import oshi.software.os.OperatingSystem;
 
-/**
- * Простой класс для получения системной информации с помощью OSHI
- */
+
 public class SimpleSystemInfo {
     
     private SystemInfo systemInfo;
@@ -19,11 +15,10 @@ public class SimpleSystemInfo {
     private Sensors sensors;
     private OperatingSystem os;
     
-    // Для расчета CPU usage нужны предыдущие значения
     private long[] prevTicks;
     
     public SimpleSystemInfo() {
-        // Инициализируем OSHI
+
         this.systemInfo = new SystemInfo();
         this.hardware = systemInfo.getHardware();
         this.processor = hardware.getProcessor();
@@ -31,7 +26,6 @@ public class SimpleSystemInfo {
         this.sensors = hardware.getSensors();
         this.os = systemInfo.getOperatingSystem();
         
-        // Первый замер для CPU
         this.prevTicks = processor.getSystemCpuLoadTicks();
     }
     
@@ -55,12 +49,11 @@ public class SimpleSystemInfo {
         }
         info.baseFrequency = processor.getProcessorIdentifier().getVendorFreq() / 1_000_000_000.0;
         
-        // CPU usage (нужна задержка между замерами)
+ 
         long[] currentTicks = processor.getSystemCpuLoadTicks();
         info.usage = processor.getSystemCpuLoadBetweenTicks(prevTicks) * 100.0;
-        prevTicks = currentTicks; // Сохраняем для следующего раза
+        prevTicks = currentTicks; 
         
-        // Проверяем boost
         info.boostActive = info.currentFrequency > info.baseFrequency * 1.1;
         
         return info;
@@ -96,9 +89,7 @@ public class SimpleSystemInfo {
         return info;
     }
     
-    /**
-     * Получить общую информацию о системе
-     */
+
     public GeneralInfo getGeneralInfo() {
         GeneralInfo info = new GeneralInfo();
         
@@ -111,9 +102,6 @@ public class SimpleSystemInfo {
         return info;
     }
     
-    /**
-     * Форматируем время работы в читаемый вид
-     */
     private String formatUptime(long uptimeSeconds) {
         long days = uptimeSeconds / 86400;
         long hours = (uptimeSeconds % 86400) / 3600;
@@ -122,17 +110,14 @@ public class SimpleSystemInfo {
         return String.format("%dd %dh %dm", days, hours, minutes);
     }
     
-    /**
-     * Простой класс для хранения информации о CPU
-     */
     public static class CPUInfo {
         public String name;
         public String vendor;
         public int physicalCores;
         public int logicalCores;
-        public double baseFrequency;     // GHz
-        public double currentFrequency;  // GHz
-        public double usage;             // %
+        public double baseFrequency;    
+        public double currentFrequency;  
+        public double usage;             
         public boolean boostActive;
         
         @Override
@@ -145,16 +130,14 @@ public class SimpleSystemInfo {
         }
     }
     
-    /**
-     * Простой класс для хранения информации о памяти
-     */
+
     public static class MemoryInfo {
-        public long totalMemory;      // байты
-        public long usedMemory;       // байты
-        public long availableMemory;  // байты
-        public double usagePercent;   // %
-        public long swapTotal;        // байты
-        public long swapUsed;         // байты
+        public long totalMemory;     
+        public long usedMemory;      
+        public long availableMemory; 
+        public double usagePercent;   
+        public long swapTotal;       
+        public long swapUsed;       
         
         @Override
         public String toString() {
@@ -169,12 +152,10 @@ public class SimpleSystemInfo {
         }
     }
     
-    /**
-     * Простой класс для хранения информации о сенсорах
-     */
+
     public static class SensorInfo {
-        public double cpuTemperature;  // °C
-        public double cpuVoltage;      // V
+        public double cpuTemperature;  
+        public double cpuVoltage;     
         
         @Override
         public String toString() {
@@ -185,9 +166,7 @@ public class SimpleSystemInfo {
         }
     }
     
-    /**
-     * Простой класс для общей информации о системе
-     */
+
     public static class GeneralInfo {
         public String osName;
         public String osVersion;
