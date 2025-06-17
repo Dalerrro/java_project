@@ -61,6 +61,20 @@ class SystemMonitorAPI {
   async getServiceInfo() {
     return this.fetchWithTimeout(`${this.baseUrl}/`);
   }
+
+  // Получить сохраненные настройки
+  async getSettings() {
+    return this.fetchWithTimeout(`${this.baseUrl}/api/settings`);
+  }
+
+  // Сохранить настройки
+  async saveSettings(data) {
+    return this.fetchWithTimeout(`${this.baseUrl}/api/settings`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+  }
 }
 
 export default new SystemMonitorAPI();

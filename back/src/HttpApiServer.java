@@ -4,7 +4,12 @@ import com.sun.net.httpserver.HttpExchange;
 import java.net.InetSocketAddress;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 
 /**
  * HTTP API сервер для системного мониторинга с OSHI
@@ -67,6 +72,7 @@ public class HttpApiServer {
     private void setupGeneralEndpoints() {
         server.createContext("/", new ApiInfoHandler());
         server.createContext("/health", new HealthCheckHandler());
+        server.createContext("/api/settings", new SettingsHandler());
     }
     
     private static class ApiInfoHandler implements HttpHandler {
@@ -90,6 +96,36 @@ public class HttpApiServer {
                 "  \"status\": \"UP\"\n" +
             "}";
             sendResponse(exchange, 200, health);
+        }
+    }
+
+    private static class SettingsHandler implements HttpHandler {
+        private static final Path SETTINGS_PATH = Paths.get("settings.json");
+
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            setCORSHeaders(exchange);
+            String method = exchange.getRequestMethod();
+
+            if ("GET".equalsIgnoreCase(method)) {
+                String data = "{}";
+                if (Files.exists(SETTINGS_PATH)) {
+                    data = Files.readString(SETTINGS_PATH);
+                }
+                sendResponse(exchange, 200, data);
+            } else if ("POST".equalsIgnoreCase(method)) {
+                InputStream is = exchange.getRequestBody();
+                String body = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+                Files.writeString(
+                    SETTINGS_PATH,
+                    body,
+                    StandardOpenOption.CREATE,
+                    StandardOpenOption.TRUNCATE_EXISTING
+                );
+                sendResponse(exchange, 200, "{\"status\":\"saved\"}");
+            } else {
+                sendResponse(exchange, 405, "{\"error\":\"Method not allowed\"}");
+            }
         }
     }
     

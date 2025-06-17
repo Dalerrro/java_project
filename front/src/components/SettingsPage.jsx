@@ -1,6 +1,6 @@
 // src/components/SettingsPage.jsx
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -36,6 +36,7 @@ import {
   CheckCircle,
   Warning
 } from '@mui/icons-material';
+import api from '../services/api';
 
 const SettingsPage = () => {
   const [settings, setSettings] = useState({
@@ -78,6 +79,20 @@ const SettingsPage = () => {
   const [saveStatus, setSaveStatus] = useState(null);
   const [testingConnection, setTestingConnection] = useState(false);
 
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const data = await api.getSettings();
+        if (data && Object.keys(data).length > 0) {
+          setSettings(data);
+        }
+      } catch (e) {
+        console.error('Failed to load settings', e);
+      }
+    };
+    load();
+  }, []);
+
   const handleSettingChange = (category, key, value) => {
     setSettings(prev => ({
       ...prev,
@@ -88,13 +103,16 @@ const SettingsPage = () => {
     }));
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     setSaveStatus('saving');
-    // Здесь будет логика сохранения настроек
-    setTimeout(() => {
+    try {
+      await api.saveSettings(settings);
       setSaveStatus('success');
-      setTimeout(() => setSaveStatus(null), 3000);
-    }, 1000);
+    } catch (e) {
+      console.error('Failed to save settings', e);
+      setSaveStatus('error');
+    }
+    setTimeout(() => setSaveStatus(null), 3000);
   };
 
   const handleReset = () => {
@@ -190,6 +208,15 @@ const SettingsPage = () => {
           sx={{ mb: 3 }}
         >
           Settings saved successfully!
+        </Alert>
+      )}
+
+      {saveStatus === 'error' && (
+        <Alert
+          severity="error"
+          sx={{ mb: 3 }}
+        >
+          Failed to save settings.
         </Alert>
       )}
 
