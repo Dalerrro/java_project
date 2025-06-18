@@ -1,14 +1,16 @@
 // src/hooks/useSystemMonitor.js
 
-import { useEffect, useRef } from 'react';
-import api from '../services/api';
-import telegramService from '../services/telegram';
+import { useEffect, useRef } from "react";
+import api from "../services/api";
+import telegramService from "../services/telegram";
 
-const useSystemMonitor = (thresholds = {
-  cpu: { warning: 80, critical: 95 },
-  memory: { warning: 85, critical: 95 },
-  temperature: { warning: 70, critical: 85 }
-}) => {
+const useSystemMonitor = (
+  thresholds = {
+    cpu: { warning: 80, critical: 95 },
+    memory: { warning: 85, critical: 95 },
+    temperature: { warning: 70, critical: 85 },
+  },
+) => {
   const alertsSentRef = useRef({});
   const checkIntervalRef = useRef(null);
 
@@ -16,11 +18,11 @@ const useSystemMonitor = (thresholds = {
     const checkSystemStatus = async () => {
       try {
         const data = await api.getSystemCurrent();
-        
+
         const metrics = {
           cpu: data.currentMetrics.cpuUsage,
           memory: data.currentMetrics.memoryUsagePercent,
-          temperature: data.sensorData.cpuTemperature
+          temperature: data.sensorData.cpuTemperature,
         };
 
         // Проверяем каждую метрику
@@ -30,31 +32,36 @@ const useSystemMonitor = (thresholds = {
 
           const isCritical = value >= threshold.critical;
           const isWarning = value >= threshold.warning && !isCritical;
-          
-          const alertKey = `${metric}_${isCritical ? 'critical' : 'warning'}`;
-          const shouldSendAlert = (isCritical || isWarning) && !alertsSentRef.current[alertKey];
-          
+
+          const alertKey = `${metric}_${isCritical ? "critical" : "warning"}`;
+          const shouldSendAlert =
+            (isCritical || isWarning) && !alertsSentRef.current[alertKey];
+
           if (shouldSendAlert && telegramService.config.enabled) {
             // Отправляем алерт
-            const metricLabel = metric.charAt(0).toUpperCase() + metric.slice(1);
-            const unit = metric === 'temperature' ? '°C' : '%';
-            
+            const metricLabel =
+              metric.charAt(0).toUpperCase() + metric.slice(1);
+            const unit = metric === "temperature" ? "°C" : "%";
+
             telegramService.sendAlert(
               metricLabel,
               `${value.toFixed(1)}${unit}`,
               `${isCritical ? threshold.critical : threshold.warning}${unit}`,
-              isCritical ? 'critical' : 'warning'
+              isCritical ? "critical" : "warning",
             );
-            
+
             // Помечаем алерт как отправленный
             alertsSentRef.current[alertKey] = true;
-            
+
             // Сбрасываем флаг через 5 минут
-            setTimeout(() => {
-              alertsSentRef.current[alertKey] = false;
-            }, 5 * 60 * 1000);
+            setTimeout(
+              () => {
+                alertsSentRef.current[alertKey] = false;
+              },
+              5 * 60 * 1000,
+            );
           }
-          
+
           // Если значение вернулось в норму, сбрасываем флаги
           if (!isCritical && !isWarning) {
             alertsSentRef.current[`${metric}_critical`] = false;
@@ -62,13 +69,13 @@ const useSystemMonitor = (thresholds = {
           }
         });
       } catch (error) {
-        console.error('Failed to check system status:', error);
+        console.error("Failed to check system status:", error);
       }
     };
 
     // Проверяем сразу при запуске
     checkSystemStatus();
-    
+
     // Затем проверяем каждые 30 секунд
     checkIntervalRef.current = setInterval(checkSystemStatus, 30000);
 

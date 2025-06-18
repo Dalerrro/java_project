@@ -1,14 +1,14 @@
-// back/src/App.java
 
 import java.io.IOException;
 
 /**
  * Главное приложение системного мониторинга
- * Версия 2.0 с OSHI интеграцией
+ * Версия 2.0 с OSHI интеграцией + Telegram Bot
  */
 public class App {
     
     private static final int DEFAULT_PORT = 8080;
+    private static TelegramBot telegramBot; // Добавили поле для бота
     
     public static void main(String[] args) {
         System.out.println("===============================================");
@@ -41,17 +41,25 @@ public class App {
             // Тестируем OSHI
             // testOSHIConnection(systemInfo);  // Пока отключаем
             
-            // TODO: Инициализация Telegram (когда будет готово)
-            // initializeTelegram();
+            // ========== НОВОЕ: Инициализация Telegram Bot ==========
+            initializeTelegramBot();
             
             // Shutdown hook для корректного завершения
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
                 System.out.println("\n🛑 Получен сигнал завершения...");
                 server.stop();
+                
+                // Останавливаем Telegram бота
+                if (telegramBot != null) {
+                    telegramBot.stop();
+                    System.out.println("🤖 Telegram бот остановлен");
+                }
+                
                 System.out.println("✅ System Monitor остановлен");
             }));
             
             System.out.println("💡 Нажмите Ctrl+C для остановки сервера");
+            System.out.println("📱 Попробуйте отправить /status в Telegram!");
             
             // Держим приложение запущенным
             Thread.currentThread().join();
@@ -108,21 +116,59 @@ public class App {
         System.out.println("   GET  /status                - Старый формат статуса");
         System.out.println("   GET  /metrics               - Старый формат метрик");
         System.out.println();
+        System.out.println("📱 Telegram команды:");
+        System.out.println("   /status                     - Полный статус системы");
+        System.out.println("   /cpu                        - Данные процессора");  
+        System.out.println("   /memory                     - Информация о памяти");
+        System.out.println("   /temp                       - Температура и датчики");
+        System.out.println("   /help                       - Справка по командам");
+        System.out.println();
         System.out.println("🧪 Тестирование:");
         System.out.println("   curl http://localhost:" + port + "/api/system/current");
         System.out.println("   curl http://localhost:" + port + "/health");
+        System.out.println("   Отправьте /status в Telegram");
         System.out.println();
     }
     
     /**
-     * Тестирование OSHI подключения
+     * Инициализация Telegram бота (заменяет старый initializeTelegram)
      */
-    /**
-     * Инициализация Telegram (будет добавлено позже)
-     */
-    private static void initializeTelegram() {
-        System.out.println("📱 Инициализация Telegram...");
-        // TODO: Добавить когда будет готов TelegramBot
-        System.out.println("⏳ Telegram интеграция будет добавлена позже");
+    private static void initializeTelegramBot() {
+        System.out.println("📱 Инициализация Telegram бота...");
+        
+        // Проверяем конфигурацию
+        if (!TelegramSender.isConfigured()) {
+            System.out.println("⚠️  Telegram не настроен в telegram.properties");
+            System.out.println("💡 Файл будет создан автоматически с настройками по умолчанию");
+            System.out.println("💡 Или настройте через веб-интерфейс на вкладке Settings");
+            return;
+        }
+        
+        try {
+            telegramBot = new TelegramBot();
+            
+            // Запускаем бота в отдельном потоке
+            Thread botThread = new Thread(() -> {
+                telegramBot.start();
+            });
+            botThread.setDaemon(true); // Завершается с главным процессом
+            botThread.setName("TelegramBot");
+            botThread.start();
+            
+            System.out.println("✅ Telegram бот запущен успешно");
+            
+            // Отправляем уведомление о запуске (опционально)
+            try {
+                TelegramSender.send("🚀 <b>System Monitor запущен!</b>\n\n" +
+                    "Система готова к мониторингу.\n" +
+                    "Используйте /help для списка команд.");
+            } catch (Exception e) {
+                System.out.println("⚠️  Не удалось отправить стартовое сообщение: " + e.getMessage());
+            }
+            
+        } catch (Exception e) {
+            System.err.println("❌ Ошибка запуска Telegram бота: " + e.getMessage());
+            System.out.println("💡 Проверьте настройки в telegram.properties");
+        }
     }
 }

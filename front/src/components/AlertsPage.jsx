@@ -1,10 +1,10 @@
 // src/components/AlertsPage.jsx
 
-import React, { useState, useEffect } from 'react';
-import { 
-  Box, 
-  Typography, 
-  Card, 
+import React, { useState, useEffect } from "react";
+import {
+  Box,
+  Typography,
+  Card,
   CardContent,
   Grid,
   TextField,
@@ -21,9 +21,9 @@ import {
   ListItemIcon,
   ListItemText,
   ListItemSecondaryAction,
-  Snackbar
-} from '@mui/material';
-import { 
+  Snackbar,
+} from "@mui/material";
+import {
   NotificationsActive,
   Telegram,
   Warning,
@@ -37,22 +37,24 @@ import {
   Save,
   Cancel,
   Science,
-  History
-} from '@mui/icons-material';
-import api from '../services/api';
-import telegramService from '../services/telegram';
-import settingsService from '../services/settings';
+  History,
+} from "@mui/icons-material";
+import api from "../services/api";
+import telegramService from "../services/telegram";
+import settingsService from "../services/settings";
 
 const AlertsPage = () => {
   const [thresholds, setThresholds] = useState(settingsService.getThresholds());
-  const [telegramConfig, setTelegramConfig] = useState(settingsService.getTelegramSettings());
+  const [telegramConfig, setTelegramConfig] = useState(
+    settingsService.getTelegramSettings(),
+  );
   const [currentMetrics, setCurrentMetrics] = useState(null);
   const [editMode, setEditMode] = useState(false);
   const [testingBot, setTestingBot] = useState(false);
   const [alertHistory, setAlertHistory] = useState([]);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
-  const [snackbarMessage, setSnackbarMessage] = useState('');
-  const [snackbarSeverity, setSnackbarSeverity] = useState('success');
+  const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [snackbarSeverity, setSnackbarSeverity] = useState("success");
 
   useEffect(() => {
     // Получаем текущие метрики для отображения
@@ -63,10 +65,10 @@ const AlertsPage = () => {
           cpu: data.currentMetrics.cpuUsage,
           memory: data.currentMetrics.memoryUsagePercent,
           temperature: data.sensorData.cpuTemperature,
-          frequency: data.cpuDetails.currentFrequency
+          frequency: data.cpuDetails.currentFrequency,
         });
       } catch (err) {
-        console.error('Failed to fetch metrics:', err);
+        console.error("Failed to fetch metrics:", err);
       }
     };
 
@@ -88,7 +90,7 @@ const AlertsPage = () => {
 
       if (isWarning || isCritical) {
         const existingAlert = alertHistory.find(
-          alert => alert.metric === metric && alert.active
+          (alert) => alert.metric === metric && alert.active,
         );
 
         if (!existingAlert) {
@@ -97,13 +99,13 @@ const AlertsPage = () => {
             metric,
             value,
             threshold: isCritical ? config.critical : config.warning,
-            severity: isCritical ? 'critical' : 'warning',
+            severity: isCritical ? "critical" : "warning",
             timestamp: new Date(),
-            active: true
+            active: true,
           };
 
-          setAlertHistory(prev => [newAlert, ...prev].slice(0, 50));
-          
+          setAlertHistory((prev) => [newAlert, ...prev].slice(0, 50));
+
           // Отправляем уведомление в Telegram
           const metricLabel = getMetricLabel(metric);
           const unit = getMetricUnit(metric);
@@ -111,7 +113,7 @@ const AlertsPage = () => {
             `${metricLabel}`,
             `${value.toFixed(1)}${unit}`,
             `${newAlert.threshold}${unit}`,
-            newAlert.severity
+            newAlert.severity,
           );
         }
       }
@@ -119,23 +121,23 @@ const AlertsPage = () => {
   }, [currentMetrics, thresholds, alertHistory, telegramConfig.enabled]);
 
   const handleThresholdChange = (metric, type, value) => {
-    setThresholds(prev => ({
+    setThresholds((prev) => ({
       ...prev,
       [metric]: {
         ...prev[metric],
-        [type]: parseFloat(value) || 0
-      }
+        [type]: parseFloat(value) || 0,
+      },
     }));
   };
 
   const handleTestTelegram = async () => {
     setTestingBot(true);
     const result = await telegramService.sendTestMessage();
-    
+
     setTimeout(() => {
       setTestingBot(false);
       if (result.success) {
-        alert('Test message sent successfully! Check your Telegram.');
+        alert("Test message sent successfully! Check your Telegram.");
       } else {
         alert(`Failed to send test message: ${result.error}`);
       }
@@ -145,12 +147,12 @@ const AlertsPage = () => {
   const handleSaveConfig = () => {
     // Сохраняем пороги
     settingsService.saveThresholds(thresholds);
-    
+
     // Сохраняем Telegram настройки
     settingsService.saveTelegramSettings(telegramConfig);
-    
+
     setEditMode(false);
-    showSnackbar('Alert settings saved successfully!', 'success');
+    showSnackbar("Alert settings saved successfully!", "success");
   };
 
   const handleCancelEdit = () => {
@@ -160,7 +162,7 @@ const AlertsPage = () => {
     setEditMode(false);
   };
 
-  const showSnackbar = (message, severity = 'success') => {
+  const showSnackbar = (message, severity = "success") => {
     setSnackbarMessage(message);
     setSnackbarSeverity(severity);
     setSnackbarOpen(true);
@@ -168,31 +170,46 @@ const AlertsPage = () => {
 
   const getMetricIcon = (metric) => {
     switch (metric) {
-      case 'cpu': return <Computer />;
-      case 'memory': return <Memory />;
-      case 'temperature': return <Thermostat />;
-      case 'frequency': return <Speed />;
-      default: return <Warning />;
+      case "cpu":
+        return <Computer />;
+      case "memory":
+        return <Memory />;
+      case "temperature":
+        return <Thermostat />;
+      case "frequency":
+        return <Speed />;
+      default:
+        return <Warning />;
     }
   };
 
   const getMetricUnit = (metric) => {
     switch (metric) {
-      case 'cpu': return '%';
-      case 'memory': return '%';
-      case 'temperature': return '°C';
-      case 'frequency': return 'GHz';
-      default: return '';
+      case "cpu":
+        return "%";
+      case "memory":
+        return "%";
+      case "temperature":
+        return "°C";
+      case "frequency":
+        return "GHz";
+      default:
+        return "";
     }
   };
 
   const getMetricLabel = (metric) => {
     switch (metric) {
-      case 'cpu': return 'CPU Usage';
-      case 'memory': return 'Memory Usage';
-      case 'temperature': return 'CPU Temperature';
-      case 'frequency': return 'CPU Frequency';
-      default: return metric;
+      case "cpu":
+        return "CPU Usage";
+      case "memory":
+        return "Memory Usage";
+      case "temperature":
+        return "CPU Temperature";
+      case "frequency":
+        return "CPU Frequency";
+      default:
+        return metric;
     }
   };
 
@@ -203,26 +220,44 @@ const AlertsPage = () => {
     const unit = getMetricUnit(metric);
 
     return (
-      <Card elevation={0} sx={{ border: '1px solid #e5e7eb', borderRadius: 3 }}>
+      <Card elevation={0} sx={{ border: "1px solid #e5e7eb", borderRadius: 3 }}>
         <CardContent sx={{ p: 3 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              mb: 2,
+            }}
+          >
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
               <Box
                 sx={{
                   p: 1,
-                  backgroundColor: isCritical ? '#fef2f2' : isWarning ? '#fffbeb' : '#f0fdf4',
+                  backgroundColor: isCritical
+                    ? "#fef2f2"
+                    : isWarning
+                      ? "#fffbeb"
+                      : "#f0fdf4",
                   borderRadius: 2,
-                  border: `1px solid ${isCritical ? '#fecaca' : isWarning ? '#fed7aa' : '#bbf7d0'}`
+                  border: `1px solid ${isCritical ? "#fecaca" : isWarning ? "#fed7aa" : "#bbf7d0"}`,
                 }}
               >
-                {React.cloneElement(getMetricIcon(metric), { 
-                  sx: { 
-                    color: isCritical ? '#ef4444' : isWarning ? '#f59e0b' : '#10b981',
-                    fontSize: '1.25rem' 
-                  } 
+                {React.cloneElement(getMetricIcon(metric), {
+                  sx: {
+                    color: isCritical
+                      ? "#ef4444"
+                      : isWarning
+                        ? "#f59e0b"
+                        : "#10b981",
+                    fontSize: "1.25rem",
+                  },
                 })}
               </Box>
-              <Typography variant="h6" sx={{ fontWeight: 600, color: '#111827' }}>
+              <Typography
+                variant="h6"
+                sx={{ fontWeight: 600, color: "#111827" }}
+              >
                 {getMetricLabel(metric)}
               </Typography>
             </Box>
@@ -230,10 +265,12 @@ const AlertsPage = () => {
               control={
                 <Switch
                   checked={config.enabled}
-                  onChange={(e) => setThresholds(prev => ({
-                    ...prev,
-                    [metric]: { ...prev[metric], enabled: e.target.checked }
-                  }))}
+                  onChange={(e) =>
+                    setThresholds((prev) => ({
+                      ...prev,
+                      [metric]: { ...prev[metric], enabled: e.target.checked },
+                    }))
+                  }
                   size="small"
                 />
               }
@@ -243,12 +280,18 @@ const AlertsPage = () => {
 
           {/* Current Value */}
           <Box sx={{ mb: 3 }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-              <Typography variant="body2" sx={{ color: '#6b7280' }}>
+            <Box
+              sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}
+            >
+              <Typography variant="body2" sx={{ color: "#6b7280" }}>
                 Current Value
               </Typography>
-              <Typography variant="body2" sx={{ fontWeight: 600, color: '#111827' }}>
-                {current.toFixed(1)}{unit}
+              <Typography
+                variant="body2"
+                sx={{ fontWeight: 600, color: "#111827" }}
+              >
+                {current.toFixed(1)}
+                {unit}
               </Typography>
             </Box>
             <LinearProgress
@@ -257,11 +300,15 @@ const AlertsPage = () => {
               sx={{
                 height: 8,
                 borderRadius: 4,
-                backgroundColor: '#e5e7eb',
-                '& .MuiLinearProgress-bar': {
-                  backgroundColor: isCritical ? '#ef4444' : isWarning ? '#f59e0b' : '#10b981',
-                  borderRadius: 4
-                }
+                backgroundColor: "#e5e7eb",
+                "& .MuiLinearProgress-bar": {
+                  backgroundColor: isCritical
+                    ? "#ef4444"
+                    : isWarning
+                      ? "#f59e0b"
+                      : "#10b981",
+                  borderRadius: 4,
+                },
               }}
             />
           </Box>
@@ -276,10 +323,16 @@ const AlertsPage = () => {
                   size="small"
                   fullWidth
                   value={config.warning}
-                  onChange={(e) => handleThresholdChange(metric, 'warning', e.target.value)}
+                  onChange={(e) =>
+                    handleThresholdChange(metric, "warning", e.target.value)
+                  }
                   disabled={!editMode}
                   InputProps={{
-                    endAdornment: <Typography variant="caption" sx={{ color: '#6b7280' }}>{unit}</Typography>
+                    endAdornment: (
+                      <Typography variant="caption" sx={{ color: "#6b7280" }}>
+                        {unit}
+                      </Typography>
+                    ),
                   }}
                 />
               </Grid>
@@ -290,10 +343,16 @@ const AlertsPage = () => {
                   size="small"
                   fullWidth
                   value={config.critical}
-                  onChange={(e) => handleThresholdChange(metric, 'critical', e.target.value)}
+                  onChange={(e) =>
+                    handleThresholdChange(metric, "critical", e.target.value)
+                  }
                   disabled={!editMode}
                   InputProps={{
-                    endAdornment: <Typography variant="caption" sx={{ color: '#6b7280' }}>{unit}</Typography>
+                    endAdornment: (
+                      <Typography variant="caption" sx={{ color: "#6b7280" }}>
+                        {unit}
+                      </Typography>
+                    ),
                   }}
                 />
               </Grid>
@@ -309,7 +368,7 @@ const AlertsPage = () => {
                   label="Critical threshold exceeded"
                   size="small"
                   color="error"
-                  sx={{ width: '100%' }}
+                  sx={{ width: "100%" }}
                 />
               )}
               {isWarning && !isCritical && (
@@ -318,7 +377,7 @@ const AlertsPage = () => {
                   label="Warning threshold exceeded"
                   size="small"
                   color="warning"
-                  sx={{ width: '100%' }}
+                  sx={{ width: "100%" }}
                 />
               )}
               {!isWarning && !isCritical && (
@@ -327,7 +386,7 @@ const AlertsPage = () => {
                   label="Within normal range"
                   size="small"
                   color="success"
-                  sx={{ width: '100%' }}
+                  sx={{ width: "100%" }}
                 />
               )}
             </Box>
@@ -340,23 +399,33 @@ const AlertsPage = () => {
   return (
     <Box>
       {/* Page Header */}
-      <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <Box
+        sx={{
+          mb: 4,
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
         <Box>
-          <Typography variant="h4" sx={{ fontWeight: 700, color: '#111827', mb: 1 }}>
+          <Typography
+            variant="h4"
+            sx={{ fontWeight: 700, color: "#111827", mb: 1 }}
+          >
             Alerts & Notifications
           </Typography>
-          <Typography variant="body1" sx={{ color: '#6b7280' }}>
+          <Typography variant="body1" sx={{ color: "#6b7280" }}>
             Configure thresholds and Telegram notifications
           </Typography>
         </Box>
-        <Box sx={{ display: 'flex', gap: 2 }}>
+        <Box sx={{ display: "flex", gap: 2 }}>
           {editMode ? (
             <>
               <Button
                 variant="outlined"
                 startIcon={<Cancel />}
                 onClick={handleCancelEdit}
-                sx={{ borderColor: '#d1d5db', color: '#374151' }}
+                sx={{ borderColor: "#d1d5db", color: "#374151" }}
               >
                 Cancel
               </Button>
@@ -364,7 +433,7 @@ const AlertsPage = () => {
                 variant="contained"
                 startIcon={<Save />}
                 onClick={handleSaveConfig}
-                sx={{ backgroundColor: '#3b82f6' }}
+                sx={{ backgroundColor: "#3b82f6" }}
               >
                 Save Changes
               </Button>
@@ -374,7 +443,7 @@ const AlertsPage = () => {
               variant="contained"
               startIcon={<Edit />}
               onClick={() => setEditMode(true)}
-              sx={{ backgroundColor: '#3b82f6' }}
+              sx={{ backgroundColor: "#3b82f6" }}
             >
               Edit Thresholds
             </Button>
@@ -385,7 +454,10 @@ const AlertsPage = () => {
       <Grid container spacing={3}>
         {/* Left Column - Thresholds */}
         <Grid item xs={12} lg={8}>
-          <Typography variant="h6" sx={{ fontWeight: 600, color: '#111827', mb: 2 }}>
+          <Typography
+            variant="h6"
+            sx={{ fontWeight: 600, color: "#111827", mb: 2 }}
+          >
             Alert Thresholds
           </Typography>
           <Grid container spacing={3}>
@@ -400,11 +472,19 @@ const AlertsPage = () => {
         {/* Right Column - Telegram & History */}
         <Grid item xs={12} lg={4}>
           {/* Telegram Configuration */}
-          <Card elevation={0} sx={{ border: '1px solid #e5e7eb', borderRadius: 3, mb: 3 }}>
+          <Card
+            elevation={0}
+            sx={{ border: "1px solid #e5e7eb", borderRadius: 3, mb: 3 }}
+          >
             <CardContent sx={{ p: 3 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3 }}>
-                <Telegram sx={{ color: '#0088cc' }} />
-                <Typography variant="h6" sx={{ fontWeight: 600, color: '#111827' }}>
+              <Box
+                sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3 }}
+              >
+                <Telegram sx={{ color: "#0088cc" }} />
+                <Typography
+                  variant="h6"
+                  sx={{ fontWeight: 600, color: "#111827" }}
+                >
                   Telegram Bot
                 </Typography>
               </Box>
@@ -413,7 +493,12 @@ const AlertsPage = () => {
                 control={
                   <Switch
                     checked={telegramConfig.enabled}
-                    onChange={(e) => setTelegramConfig(prev => ({ ...prev, enabled: e.target.checked }))}
+                    onChange={(e) =>
+                      setTelegramConfig((prev) => ({
+                        ...prev,
+                        enabled: e.target.checked,
+                      }))
+                    }
                   />
                 }
                 label="Enable Telegram notifications"
@@ -427,7 +512,12 @@ const AlertsPage = () => {
                     size="small"
                     label="Bot Token"
                     value={telegramConfig.botToken}
-                    onChange={(e) => setTelegramConfig(prev => ({ ...prev, botToken: e.target.value }))}
+                    onChange={(e) =>
+                      setTelegramConfig((prev) => ({
+                        ...prev,
+                        botToken: e.target.value,
+                      }))
+                    }
                     disabled={!editMode}
                     sx={{ mb: 2 }}
                   />
@@ -436,18 +526,23 @@ const AlertsPage = () => {
                     size="small"
                     label="Chat ID"
                     value={telegramConfig.chatId}
-                    onChange={(e) => setTelegramConfig(prev => ({ ...prev, chatId: e.target.value }))}
+                    onChange={(e) =>
+                      setTelegramConfig((prev) => ({
+                        ...prev,
+                        chatId: e.target.value,
+                      }))
+                    }
                     disabled={!editMode}
                     sx={{ mb: 2 }}
                   />
                   <Button
                     fullWidth
                     variant="outlined"
-                    startIcon={<Science/>}
+                    startIcon={<Science />}
                     onClick={handleTestTelegram}
                     disabled={testingBot || !telegramConfig.enabled}
                   >
-                    {testingBot ? 'Sending Test...' : 'Send Test Message'}
+                    {testingBot ? "Sending Test..." : "Send Test Message"}
                   </Button>
                 </>
               )}
@@ -455,11 +550,19 @@ const AlertsPage = () => {
           </Card>
 
           {/* Recent Alerts */}
-          <Card elevation={0} sx={{ border: '1px solid #e5e7eb', borderRadius: 3 }}>
+          <Card
+            elevation={0}
+            sx={{ border: "1px solid #e5e7eb", borderRadius: 3 }}
+          >
             <CardContent sx={{ p: 3 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
-                <History sx={{ color: '#6b7280' }} />
-                <Typography variant="h6" sx={{ fontWeight: 600, color: '#111827' }}>
+              <Box
+                sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 2 }}
+              >
+                <History sx={{ color: "#6b7280" }} />
+                <Typography
+                  variant="h6"
+                  sx={{ fontWeight: 600, color: "#111827" }}
+                >
                   Recent Alerts
                 </Typography>
               </Box>
@@ -476,26 +579,34 @@ const AlertsPage = () => {
                       sx={{
                         px: 0,
                         py: 1.5,
-                        borderBottom: '1px solid #e5e7eb',
-                        '&:last-child': { borderBottom: 'none' }
+                        borderBottom: "1px solid #e5e7eb",
+                        "&:last-child": { borderBottom: "none" },
                       }}
                     >
                       <ListItemIcon sx={{ minWidth: 40 }}>
                         {React.cloneElement(getMetricIcon(alert.metric), {
                           sx: {
-                            color: alert.severity === 'critical' ? '#ef4444' : '#f59e0b',
-                            fontSize: '1.25rem'
-                          }
+                            color:
+                              alert.severity === "critical"
+                                ? "#ef4444"
+                                : "#f59e0b",
+                            fontSize: "1.25rem",
+                          },
                         })}
                       </ListItemIcon>
                       <ListItemText
                         primary={
                           <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                            {getMetricLabel(alert.metric)} - {alert.value.toFixed(1)}{getMetricUnit(alert.metric)}
+                            {getMetricLabel(alert.metric)} -{" "}
+                            {alert.value.toFixed(1)}
+                            {getMetricUnit(alert.metric)}
                           </Typography>
                         }
                         secondary={
-                          <Typography variant="caption" sx={{ color: '#6b7280' }}>
+                          <Typography
+                            variant="caption"
+                            sx={{ color: "#6b7280" }}
+                          >
                             {alert.timestamp.toLocaleTimeString()}
                           </Typography>
                         }
@@ -504,8 +615,10 @@ const AlertsPage = () => {
                         <Chip
                           label={alert.severity}
                           size="small"
-                          color={alert.severity === 'critical' ? 'error' : 'warning'}
-                          sx={{ fontSize: '0.7rem' }}
+                          color={
+                            alert.severity === "critical" ? "error" : "warning"
+                          }
+                          sx={{ fontSize: "0.7rem" }}
                         />
                       </ListItemSecondaryAction>
                     </ListItem>
@@ -522,12 +635,12 @@ const AlertsPage = () => {
         open={snackbarOpen}
         autoHideDuration={4000}
         onClose={() => setSnackbarOpen(false)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
       >
         <Alert
           onClose={() => setSnackbarOpen(false)}
           severity={snackbarSeverity}
-          sx={{ width: '100%' }}
+          sx={{ width: "100%" }}
         >
           {snackbarMessage}
         </Alert>

@@ -1,12 +1,12 @@
 class SettingsService {
   constructor() {
     this.STORAGE_KEYS = {
-      MONITORING: 'settings_monitoring',
-      TELEGRAM: 'settings_telegram',
-      INTERFACE: 'settings_interface',
-      THRESHOLDS: 'settings_thresholds'
+      MONITORING: "settings_monitoring",
+      TELEGRAM: "settings_telegram",
+      INTERFACE: "settings_interface",
+      THRESHOLDS: "settings_thresholds",
     };
-    
+
     this.defaultSettings = {
       monitoring: {
         updateInterval: 5,
@@ -16,36 +16,36 @@ class SettingsService {
         enableMemoryMonitoring: true,
         enableDiskMonitoring: true,
         enableNetworkMonitoring: false,
-        enableTemperatureMonitoring: true
+        enableTemperatureMonitoring: true,
       },
       telegram: {
-        botToken: '7763857597:AAFB3eIcwlbBmCnBIT1WbkrjsdvupalqC1w',
-        chatId: '390304506',
+        botToken: "7763857597:AAFB3eIcwlbBmCnBIT1WbkrjsdvupalqC1w",
+        chatId: "390304506",
         enabled: true,
-        messageFormat: 'detailed',
-        language: 'ru',
+        messageFormat: "detailed",
+        language: "ru",
         workingHours: true,
-        workingHoursStart: '09:00',
-        workingHoursEnd: '18:00',
+        workingHoursStart: "09:00",
+        workingHoursEnd: "18:00",
         quietMode: false,
-        quietModeStart: '22:00',
-        quietModeEnd: '08:00',
+        quietModeStart: "22:00",
+        quietModeEnd: "08:00",
         alertCooldown: 60,
-        significantChangeThreshold: 10 // Добавлен для резких скачков метрик
+        significantChangeThreshold: 10, // Добавлен для резких скачков метрик
       },
       interface: {
-        theme: 'light',
+        theme: "light",
         autoRefresh: true,
         showAnimations: true,
         compactView: false,
-        showTooltips: true
+        showTooltips: true,
       },
       thresholds: {
         cpu: { enabled: true, warning: 80, critical: 95 },
         memory: { enabled: true, warning: 85, critical: 95 },
         temperature: { enabled: true, warning: 70, critical: 85 },
-        frequency: { enabled: false, warning: 4.5, critical: 5.0 }
-      }
+        frequency: { enabled: false, warning: 4.5, critical: 5.0 },
+      },
     };
   }
 
@@ -59,7 +59,7 @@ class SettingsService {
       monitoring,
       telegram,
       interface: interfaceSettings,
-      thresholds
+      thresholds,
     };
   }
 
@@ -69,14 +69,17 @@ class SettingsService {
       try {
         return JSON.parse(stored);
       } catch (e) {
-        console.error('Failed to parse monitoring settings:', e);
+        console.error("Failed to parse monitoring settings:", e);
       }
     }
     return this.defaultSettings.monitoring;
   }
 
   saveMonitoringSettings(settings) {
-    localStorage.setItem(this.STORAGE_KEYS.MONITORING, JSON.stringify(settings));
+    localStorage.setItem(
+      this.STORAGE_KEYS.MONITORING,
+      JSON.stringify(settings),
+    );
   }
 
   getTelegramSettings() {
@@ -85,7 +88,7 @@ class SettingsService {
       try {
         return JSON.parse(stored);
       } catch (e) {
-        console.error('Failed to parse telegram settings:', e);
+        console.error("Failed to parse telegram settings:", e);
       }
     }
     return this.defaultSettings.telegram;
@@ -101,7 +104,7 @@ class SettingsService {
       try {
         return JSON.parse(stored);
       } catch (e) {
-        console.error('Failed to parse interface settings:', e);
+        console.error("Failed to parse interface settings:", e);
       }
     }
     return this.defaultSettings.interface;
@@ -117,14 +120,17 @@ class SettingsService {
       try {
         return JSON.parse(stored);
       } catch (e) {
-        console.error('Failed to parse thresholds:', e);
+        console.error("Failed to parse thresholds:", e);
       }
     }
     return this.defaultSettings.thresholds;
   }
 
   saveThresholds(thresholds) {
-    localStorage.setItem(this.STORAGE_KEYS.THRESHOLDS, JSON.stringify(thresholds));
+    localStorage.setItem(
+      this.STORAGE_KEYS.THRESHOLDS,
+      JSON.stringify(thresholds),
+    );
   }
 
   isWithinWorkingHours() {
@@ -133,10 +139,12 @@ class SettingsService {
 
     const now = new Date();
     const currentTime = now.getHours() * 60 + now.getMinutes();
-    
-    const [startHour, startMin] = settings.workingHoursStart.split(':').map(Number);
-    const [endHour, endMin] = settings.workingHoursEnd.split(':').map(Number);
-    
+
+    const [startHour, startMin] = settings.workingHoursStart
+      .split(":")
+      .map(Number);
+    const [endHour, endMin] = settings.workingHoursEnd.split(":").map(Number);
+
     const startTime = startHour * 60 + startMin;
     const endTime = endHour * 60 + endMin;
 
@@ -149,17 +157,19 @@ class SettingsService {
 
     const now = new Date();
     const currentTime = now.getHours() * 60 + now.getMinutes();
-    
-    const [startHour, startMin] = settings.quietModeStart.split(':').map(Number);
-    const [endHour, endMin] = settings.quietModeEnd.split(':').map(Number);
-    
+
+    const [startHour, startMin] = settings.quietModeStart
+      .split(":")
+      .map(Number);
+    const [endHour, endMin] = settings.quietModeEnd.split(":").map(Number);
+
     const startTime = startHour * 60 + startMin;
     const endTime = endHour * 60 + endMin;
 
     if (startTime > endTime) {
       return currentTime >= startTime || currentTime <= endTime;
     }
-    
+
     return currentTime >= startTime && currentTime <= endTime;
   }
 
@@ -182,8 +192,8 @@ class SettingsService {
   exportSettings() {
     const settings = this.getSettings();
     const dataStr = JSON.stringify(settings, null, 2);
-    const exportFileDefaultName = `system-monitor-settings-${new Date().toISOString().split('T')[0]}.json`;
-    
+    const exportFileDefaultName = `system-monitor-settings-${new Date().toISOString().split("T")[0]}.json`;
+
     return { data: dataStr, filename: exportFileDefaultName };
     // React-компонент должен сам создать Blob и инициировать скачивание
   }
@@ -191,7 +201,7 @@ class SettingsService {
   importSettings(fileContent) {
     try {
       const settings = JSON.parse(fileContent);
-      
+
       if (settings.monitoring) {
         this.saveMonitoringSettings(settings.monitoring);
       }
@@ -204,10 +214,10 @@ class SettingsService {
       if (settings.thresholds) {
         this.saveThresholds(settings.thresholds);
       }
-      
+
       return { success: true };
     } catch (e) {
-      console.error('Failed to import settings:', e);
+      console.error("Failed to import settings:", e);
       return { success: false, error: e.message };
     }
   }

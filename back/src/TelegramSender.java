@@ -132,7 +132,7 @@ public class TelegramSender {
                 "<b>Метрика:</b> %s\n" +
                 "<b>Текущее значение:</b> %.1f\n" +
                 "<b>Порог:</b> %.1f\n" +
-                "<b>Время:</b> %s\n\n";
+                "<b>Время:</b> %s\n",
                 emoji, severityText, metric, value, threshold, new java.util.Date().toString()
             );
         } else {
