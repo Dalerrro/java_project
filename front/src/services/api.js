@@ -32,32 +32,27 @@ class SystemMonitorAPI {
     }
   }
 
-  // Получить полную информацию о системе
+
   async getSystemCurrent() {
     return this.fetchWithTimeout(`${this.baseUrl}/api/system/current`);
   }
 
-  // Получить информацию о CPU
   async getCPUInfo() {
     return this.fetchWithTimeout(`${this.baseUrl}/api/system/cpu`);
   }
 
-  // Получить информацию о памяти
   async getMemoryInfo() {
     return this.fetchWithTimeout(`${this.baseUrl}/api/system/memory`);
   }
 
-  // Получить данные сенсоров
   async getSensorInfo() {
     return this.fetchWithTimeout(`${this.baseUrl}/api/system/sensors`);
   }
 
-  // Проверка здоровья сервера
   async getHealth() {
     return this.fetchWithTimeout(`${this.baseUrl}/health`);
   }
-
-  // Получить базовую информацию о сервисе
+  
   async getServiceInfo() {
     return this.fetchWithTimeout(`${this.baseUrl}/`);
   }

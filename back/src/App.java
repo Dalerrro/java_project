@@ -1,14 +1,10 @@
 
 import java.io.IOException;
 
-/**
- * Главное приложение системного мониторинга
- * Версия 2.0 с OSHI интеграцией + Telegram Bot
- */
 public class App {
     
     private static final int DEFAULT_PORT = 8080;
-    private static TelegramBot telegramBot; // Добавили поле для бота
+    private static TelegramBot telegramBot; 
     
     public static void main(String[] args) {
         System.out.println("===============================================");
@@ -16,40 +12,28 @@ public class App {
         System.out.println("===============================================");
         
         try {
-            // Определяем порт
             int port = getPortFromArgs(args);
             System.out.println("📡 Порт: " + port);
             
-            // Инициализируем компоненты
             System.out.println("🔧 Инициализация компонентов...");
             
-            // Создаем SimpleSystemInfo для OSHI
             SimpleSystemInfo systemInfo = new SimpleSystemInfo();
             System.out.println("✅ OSHI SystemInfo инициализирован");
             
-            // Создаем веб-сервис
             OSHIWebService webService = new OSHIWebService();
             System.out.println("✅ Web Service создан");
             
-            // Создаем и запускаем HTTP сервер
             HttpApiServer server = new HttpApiServer(port);
             server.start();
             
-            // Отображаем информацию о запуске
             printStartupInfo(port);
-            
-            // Тестируем OSHI
-            // testOSHIConnection(systemInfo);  // Пока отключаем
-            
-            // ========== НОВОЕ: Инициализация Telegram Bot ==========
+    
             initializeTelegramBot();
             
-            // Shutdown hook для корректного завершения
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
                 System.out.println("\n🛑 Получен сигнал завершения...");
                 server.stop();
                 
-                // Останавливаем Telegram бота
                 if (telegramBot != null) {
                     telegramBot.stop();
                     System.out.println("🤖 Telegram бот остановлен");
@@ -61,7 +45,6 @@ public class App {
             System.out.println("💡 Нажмите Ctrl+C для остановки сервера");
             System.out.println("📱 Попробуйте отправить /status в Telegram!");
             
-            // Держим приложение запущенным
             Thread.currentThread().join();
             
         } catch (NumberFormatException e) {
@@ -78,9 +61,6 @@ public class App {
         }
     }
     
-    /**
-     * Получить порт из аргументов командной строки
-     */
     private static int getPortFromArgs(String[] args) {
         if (args.length > 0) {
             try {
@@ -97,9 +77,6 @@ public class App {
         return DEFAULT_PORT;
     }
     
-    /**
-     * Вывод информации о запуске
-     */
     private static void printStartupInfo(int port) {
         System.out.println();
         System.out.println("🚀 СЕРВЕР ЗАПУЩЕН УСПЕШНО!");
@@ -129,14 +106,10 @@ public class App {
         System.out.println("   Отправьте /status в Telegram");
         System.out.println();
     }
-    
-    /**
-     * Инициализация Telegram бота (заменяет старый initializeTelegram)
-     */
+
     private static void initializeTelegramBot() {
         System.out.println("📱 Инициализация Telegram бота...");
-        
-        // Проверяем конфигурацию
+
         if (!TelegramSender.isConfigured()) {
             System.out.println("⚠️  Telegram не настроен в telegram.properties");
             System.out.println("💡 Файл будет создан автоматически с настройками по умолчанию");
@@ -147,17 +120,15 @@ public class App {
         try {
             telegramBot = new TelegramBot();
             
-            // Запускаем бота в отдельном потоке
             Thread botThread = new Thread(() -> {
                 telegramBot.start();
             });
-            botThread.setDaemon(true); // Завершается с главным процессом
+            botThread.setDaemon(true); 
             botThread.setName("TelegramBot");
             botThread.start();
             
             System.out.println("✅ Telegram бот запущен успешно");
             
-            // Отправляем уведомление о запуске (опционально)
             try {
                 TelegramSender.send("🚀 <b>System Monitor запущен!</b>\n\n" +
                     "Система готова к мониторингу.\n" +

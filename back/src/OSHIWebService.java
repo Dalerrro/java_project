@@ -19,7 +19,8 @@ public class OSHIWebService implements HttpHandler {
     
     @Override
     public void handle(HttpExchange exchange) throws IOException {
-        // Добавляем CORS заголовки
+        
+        // CORS
         exchange.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
         exchange.getResponseHeaders().add("Content-Type", "application/json; charset=UTF-8");
         
