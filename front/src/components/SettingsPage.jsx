@@ -418,187 +418,83 @@ const SettingsPage = () => {
                 </FormControl>
               </Box>
 
-              {/* Interface Toggles */}
-            
-              </Box>
+              {/* Auto Refresh */}
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={settings.interface.autoRefresh}
+                    onChange={(e) =>
+                      handleSettingChange(
+                        "interface",
+                        "autoRefresh",
+                        e.target.checked,
+                      )
+                    }
+                    size="small"
+                  />
+                }
+                label="Auto-refresh data"
+              />
+
+              {/* Show Animations */}
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={settings.interface.showAnimations}
+                    onChange={(e) =>
+                      handleSettingChange(
+                        "interface",
+                        "showAnimations",
+                        e.target.checked,
+                      )
+                    }
+                    size="small"
+                  />
+                }
+                label="Enable animations"
+              />
+
+              {/* Compact View */}
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={settings.interface.compactView}
+                    onChange={(e) =>
+                      handleSettingChange(
+                        "interface",
+                        "compactView",
+                        e.target.checked,
+                      )
+                    }
+                    size="small"
+                  />
+                }
+                label="Compact view mode"
+              />
+
+              {/* Show Tooltips */}
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={settings.interface.showTooltips}
+                    onChange={(e) =>
+                      handleSettingChange(
+                        "interface",
+                        "showTooltips",
+                        e.target.checked,
+                      )
+                    }
+                    size="small"
+                  />
+                }
+                label="Show tooltips"
+              />
+            </Box>
           </SettingCard>
         </Grid>
 
         {/* Right Column */}
         <Grid item xs={12} lg={6}>
-          {/* Monitoring Thresholds */}
-          <SettingCard title="Monitoring Thresholds" icon={Settings}>
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
-              {/* CPU Thresholds */}
-              <Box>
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={settings.monitoring.enableCpuMonitoring}
-                      onChange={(e) =>
-                        handleSettingChange(
-                          "monitoring",
-                          "enableCpuMonitoring",
-                          e.target.checked,
-                        )
-                      }
-                      size="small"
-                    />
-                  }
-                  label="Enable CPU Monitoring"
-                />
-                {settings.monitoring.enableCpuMonitoring && (
-                  <Box sx={{ mt: 2 }}>
-                    <Grid container spacing={2}>
-                      <Grid item xs={6}>
-                        <TextField
-                          fullWidth
-                          size="small"
-                          label="Warning (%)"
-                          type="number"
-                          value={settings.thresholds.cpu.warning}
-                          onChange={(e) =>
-                            handleSettingChange("thresholds", "cpu", {
-                              ...settings.thresholds.cpu,
-                              warning: parseInt(e.target.value) || 0,
-                            })
-                          }
-                        />
-                      </Grid>
-                      <Grid item xs={6}>
-                        <TextField
-                          fullWidth
-                          size="small"
-                          label="Critical (%)"
-                          type="number"
-                          value={settings.thresholds.cpu.critical}
-                          onChange={(e) =>
-                            handleSettingChange("thresholds", "cpu", {
-                              ...settings.thresholds.cpu,
-                              critical: parseInt(e.target.value) || 0,
-                            })
-                          }
-                        />
-                      </Grid>
-                    </Grid>
-                  </Box>
-                )}
-              </Box>
-
-              {/* Memory Thresholds */}
-              <Box>
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={settings.monitoring.enableMemoryMonitoring}
-                      onChange={(e) =>
-                        handleSettingChange(
-                          "monitoring",
-                          "enableMemoryMonitoring",
-                          e.target.checked,
-                        )
-                      }
-                      size="small"
-                    />
-                  }
-                  label="Enable Memory Monitoring"
-                />
-                {settings.monitoring.enableMemoryMonitoring && (
-                  <Box sx={{ mt: 2 }}>
-                    <Grid container spacing={2}>
-                      <Grid item xs={6}>
-                        <TextField
-                          fullWidth
-                          size="small"
-                          label="Warning (%)"
-                          type="number"
-                          value={settings.thresholds.memory.warning}
-                          onChange={(e) =>
-                            handleSettingChange("thresholds", "memory", {
-                              ...settings.thresholds.memory,
-                              warning: parseInt(e.target.value) || 0,
-                            })
-                          }
-                        />
-                      </Grid>
-                      <Grid item xs={6}>
-                        <TextField
-                          fullWidth
-                          size="small"
-                          label="Critical (%)"
-                          type="number"
-                          value={settings.thresholds.memory.critical}
-                          onChange={(e) =>
-                            handleSettingChange("thresholds", "memory", {
-                              ...settings.thresholds.memory,
-                              critical: parseInt(e.target.value) || 0,
-                            })
-                          }
-                        />
-                      </Grid>
-                    </Grid>
-                  </Box>
-                )}
-              </Box>
-
-              {/* Temperature Thresholds */}
-              <Box>
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={settings.monitoring.enableTemperatureMonitoring}
-                      onChange={(e) =>
-                        handleSettingChange(
-                          "monitoring",
-                          "enableTemperatureMonitoring",
-                          e.target.checked,
-                        )
-                      }
-                      size="small"
-                    />
-                  }
-                  label="Enable Temperature Monitoring"
-                />
-                {settings.monitoring.enableTemperatureMonitoring && (
-                  <Box sx={{ mt: 2 }}>
-                    <Grid container spacing={2}>
-                      <Grid item xs={6}>
-                        <TextField
-                          fullWidth
-                          size="small"
-                          label="Warning (°C)"
-                          type="number"
-                          value={settings.thresholds.temperature.warning}
-                          onChange={(e) =>
-                            handleSettingChange("thresholds", "temperature", {
-                              ...settings.thresholds.temperature,
-                              warning: parseInt(e.target.value) || 0,
-                            })
-                          }
-                        />
-                      </Grid>
-                      <Grid item xs={6}>
-                        <TextField
-                          fullWidth
-                          size="small"
-                          label="Critical (°C)"
-                          type="number"
-                          value={settings.thresholds.temperature.critical}
-                          onChange={(e) =>
-                            handleSettingChange("thresholds", "temperature", {
-                              ...settings.thresholds.temperature,
-                              critical: parseInt(e.target.value) || 0,
-                            })
-                          }
-                        />
-                      </Grid>
-                    </Grid>
-                  </Box>
-                )}
-              </Box>
-            </Box>
-          </SettingCard>
-
           {/* Telegram Settings */}
           <SettingCard title="Telegram Notifications" icon={Telegram}>
             <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>

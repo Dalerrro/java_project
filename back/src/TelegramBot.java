@@ -5,6 +5,8 @@ import java.net.URL;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.Properties;
+import java.text.SimpleDateFormat;
+
 
 public class TelegramBot {
     private SimpleSystemInfo systemInfo;
@@ -144,7 +146,6 @@ public class TelegramBot {
                 "<b>Процессор:</b>\n" +
                 "Загрузка: %.1f%%\n" +
                 "Частота: %.2f GHz\n" +
-                "Ядра: %d физ / %d лог\n\n" +
                 "<b>Память:</b>\n" +
                 "Использование: %.1f%%\n" +
                 "Занято: %.1f GB / %.1f GB\n\n" +
@@ -156,15 +157,13 @@ public class TelegramBot {
                 general.processCount,
                 cpu.usage,
                 cpu.currentFrequency,
-                cpu.physicalCores,
-                cpu.logicalCores,
                 memory.usagePercent,
                 memory.usedMemory / 1024.0 / 1024.0 / 1024.0,
                 memory.totalMemory / 1024.0 / 1024.0 / 1024.0,
                 temperature,
-                new java.util.Date().toString()
-            );
-            
+                new SimpleDateFormat("dd.MM.yyyy, HH:mm:ss").format(new java.util.Date())
+        );
+
             TelegramSender.send(message);
             
         } catch (Exception e) {

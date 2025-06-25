@@ -261,21 +261,26 @@ const AlertsPage = () => {
                 {getMetricLabel(metric)}
               </Typography>
             </Box>
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={config.enabled}
-                  onChange={(e) =>
-                    setThresholds((prev) => ({
-                      ...prev,
-                      [metric]: { ...prev[metric], enabled: e.target.checked },
-                    }))
-                  }
-                  size="small"
-                />
-              }
-              label=""
-            />
+            
+            {/* Выносим переключатель в отдельную строку */}
+            <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={config.enabled}
+                    onChange={(e) =>
+                      setThresholds((prev) => ({
+                        ...prev,
+                        [metric]: { ...prev[metric], enabled: e.target.checked },
+                      }))
+                    }
+                    size="small"
+                  />
+                }
+                label=""
+                sx={{ m: 0 }}
+              />
+            </Box>
           </Box>
 
           {/* Current Value */}
@@ -389,6 +394,15 @@ const AlertsPage = () => {
                   sx={{ width: "100%" }}
                 />
               )}
+            </Box>
+          )}
+
+          {/* Когда выключено - показываем сообщение */}
+          {!config.enabled && (
+            <Box sx={{ mt: 2 }}>
+              <Alert severity="info" sx={{ borderRadius: 2 }}>
+                Monitoring disabled for this metric
+              </Alert>
             </Box>
           )}
         </CardContent>
